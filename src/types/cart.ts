@@ -7,6 +7,7 @@ export interface CartItem {
   product: Product;
   quantity: number;
   selectedSize?: string;
+  unavailable?: boolean;
 }
 
 export interface Cart {
@@ -14,4 +15,3 @@ export interface Cart {
   total: number;
   itemCount: number;
 }
-

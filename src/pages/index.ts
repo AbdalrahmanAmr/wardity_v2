@@ -26,3 +26,10 @@ export { About } from "./About";
 export { Privacy } from "./Privacy";
 export { Terms } from "./Terms";
 
+// Admin Pages
+export { AdminDashboard } from "./admin/AdminDashboard";
+export { AdminProducts } from "./admin/AdminProducts";
+export { AdminOrders } from "./admin/AdminOrders";
+export { AdminCategories } from "./admin/AdminCategories";
+export { AdminOccasions } from "./admin/AdminOccasions";
+export { AdminUsers } from "./admin/AdminUsers";

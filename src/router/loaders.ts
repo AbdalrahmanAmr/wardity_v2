@@ -4,28 +4,7 @@
  */
 import type { LoaderFunctionArgs } from "react-router-dom";
 import { queryClient } from "@/services/queryClient";
-import { productQueryKeys } from "@/services/queries";
 import { api } from "@/services/api";
-import type { ProductDetail } from "@/types";
-
-/**
- * Loader for product detail page
- * Prefetches product data before component renders
- */
-export async function productLoader({
-  params,
-}: LoaderFunctionArgs): Promise<ProductDetail> {
-  const id = params.id;
-  if (!id) {
-    throw new Error("Product ID is required");
-  }
-
-  // Prefetch product data
-  return queryClient.ensureQueryData({
-    queryKey: productQueryKeys.detail(id),
-    queryFn: () => api.get<ProductDetail>(`/products/${id}`),
-  });
-}
 
 /**
  * Loader for category page

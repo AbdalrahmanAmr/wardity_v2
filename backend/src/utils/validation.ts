@@ -13,7 +13,7 @@ export const loginSchema = z.object({
 });
 
 // Product validation schemas
-export const createProductSchema = z.object({
+const productFieldsSchema = z.object({
   name: z.string().min(1, "Product name is required"),
   price: z.number().positive("Price must be positive"),
   image: z.string().url("Image must be a valid URL"),
@@ -25,9 +25,30 @@ export const createProductSchema = z.object({
   description: z.string().optional(),
   categoryId: z.string().optional(),
   occasionId: z.string().optional(),
+  salePrice: z.number().positive("Sale price must be positive").optional().nullable(),
+  isOnSale: z.boolean().optional(),
+  saleEndsAt: z.string().datetime().optional().nullable(),
+  stockQuantity: z.number().int().nonnegative("Stock quantity cannot be negative").optional().nullable(),
+  images: z.array(z.string().url()).max(8).optional(),
 });
 
-export const updateProductSchema = createProductSchema.partial();
+export const createProductSchema = productFieldsSchema.superRefine((product, context) => {
+  if (product.salePrice != null && product.salePrice >= product.price) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ["salePrice"], message: "Sale price must be less than the regular price" });
+  }
+  if (product.isOnSale && product.salePrice == null) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ["salePrice"], message: "Sale price is required when a product is on sale" });
+  }
+});
+
+export const updateProductSchema = productFieldsSchema.partial().superRefine((product, context) => {
+  if (product.salePrice != null && product.price != null && product.salePrice >= product.price) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ["salePrice"], message: "Sale price must be less than the regular price" });
+  }
+  if (product.isOnSale && product.salePrice == null) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ["salePrice"], message: "Sale price is required when a product is on sale" });
+  }
+});
 
 // Cart validation schemas
 export const addToCartSchema = z.object({
@@ -49,9 +70,23 @@ export const addToWishlistSchema = z.object({
 export const createOrderSchema = z.object({
   shippingAddress: z.string().min(1, "Shipping address is required"),
   paymentMethod: z.string().optional(),
+  eventId: z.string().uuid().optional(),
+  consent: z.boolean().optional().default(false),
+  email: z.string().email().optional(),
+  phone: z.string().optional(),
+  sourceUrl: z.string().url().optional(),
+});
+
+export const trackEventSchema = z.object({
+  event: z.enum(["AddToCart", "InitiateCheckout"]),
+  eventId: z.string().uuid(),
+  content_ids: z.array(z.string().min(1)).max(50),
+  value: z.number().nonnegative(),
+  currency: z.literal("EGP"),
+  quantity: z.number().int().positive().optional(),
+  consent: z.literal(true),
 });
 
 export function validate<T>(schema: z.ZodSchema<T>, data: unknown): T {
   return schema.parse(data);
 }
-

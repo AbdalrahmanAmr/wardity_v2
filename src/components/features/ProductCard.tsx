@@ -5,6 +5,8 @@ import { HeartIcon as HeartSolidIcon } from "@heroicons/react/24/solid";
 import type { Product } from "@/types";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { trackAddToCart, trackAddToWishlist } from "@/lib/tracking";
 
 interface ProductCardProps {
   product: Product;
@@ -21,8 +23,11 @@ export const ProductCard: FC<ProductCardProps> = ({
 }) => {
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
+  const { language } = useLanguage();
 
   const isWishlisted = isWishlistedProp ?? isInWishlist(product.id);
+  const isOutOfStock = product.status === "Out of stock" || product.stockQuantity === 0;
+  const displayPrice = product.isOnSale && product.salePrice ? product.salePrice : product.price;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -32,6 +37,7 @@ export const ProductCard: FC<ProductCardProps> = ({
     } else {
       addToCart(product);
     }
+    trackAddToCart({ id: product.id, name: product.name, price: product.isOnSale && product.salePrice ? product.salePrice : product.price, quantity: 1 });
   };
 
   const handleToggleWishlist = (e: React.MouseEvent) => {
@@ -42,6 +48,7 @@ export const ProductCard: FC<ProductCardProps> = ({
     } else {
       toggleWishlist(product);
     }
+    if (!isWishlisted) trackAddToWishlist({ id: product.id, name: product.name, price: product.isOnSale && product.salePrice ? product.salePrice : product.price });
   };
 
   // Ensure product has a valid ID
@@ -60,13 +67,15 @@ export const ProductCard: FC<ProductCardProps> = ({
         <img
           src={product.image || `https://placehold.co/400x400/FFF0F3/D02046?text=${encodeURIComponent(product.name.slice(0, 10))}`}
           alt={product.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${isOutOfStock ? "grayscale opacity-60" : ""}`}
         />
 
         {/* Badge */}
         {product.badge && (
           <span className="badge-new z-10">{product.badge}</span>
         )}
+        {product.isOnSale && <span className="absolute top-3 left-3 z-10 rounded-full bg-red-600 px-2 py-1 text-xs font-bold text-white">-{product.discountPercent}%</span>}
+        {isOutOfStock && <span className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 text-sm font-bold text-white">{language === "ar" ? "غير متوفر" : "Out of stock"}</span>}
 
         {/* Wishlist Button */}
         <button
@@ -84,7 +93,8 @@ export const ProductCard: FC<ProductCardProps> = ({
         {/* Quick Add Button */}
         <button
           onClick={handleAddToCart}
-          className="absolute bottom-3 right-3 w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:bg-primary-600 z-20"
+          disabled={isOutOfStock}
+          className="absolute bottom-3 right-3 w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:bg-primary-600 z-20 disabled:pointer-events-none disabled:opacity-0"
           aria-label="Add to cart"
         >
           <ShoppingBagIcon className="w-5 h-5" />
@@ -105,11 +115,11 @@ export const ProductCard: FC<ProductCardProps> = ({
         </h3>
         <div className="mt-2 flex items-center justify-between">
           <p className="text-lg font-bold text-primary">
-            {product.price.toLocaleString()} <span className="text-sm font-normal">EGP</span>
+            {product.isOnSale && <span className="mr-2 text-sm text-gray-400 line-through">{product.price.toLocaleString()}</span>}
+            {displayPrice.toLocaleString()} <span className="text-sm font-normal">EGP</span>
           </p>
         </div>
       </div>
     </Link>
   );
 };
-

@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { initializeDatabase, db } from "../database/init.js";
 import { generateId, generateSlug } from "../utils/id.js";
 import { hashPassword } from "../utils/password.js";
@@ -31,8 +32,16 @@ async function seed(): Promise<void> {
   const userId = generateId();
   const passwordHash = await hashPassword("password123");
   db.prepare(
-    "INSERT INTO users (id, email, name, password_hash) VALUES (?, ?, ?, ?)"
-  ).run(userId, "test@example.com", "Test User", passwordHash);
+    "INSERT INTO users (id, email, name, password_hash, role) VALUES (?, ?, ?, ?, ?)"
+  ).run(userId, "test@example.com", "Test User", passwordHash, "customer");
+
+  // Create admin user
+  console.log("👑 Creating admin user...");
+  const adminId = generateId();
+  const adminPasswordHash = await hashPassword("admin123");
+  db.prepare(
+    "INSERT INTO users (id, email, name, password_hash, role) VALUES (?, ?, ?, ?, ?)"
+  ).run(adminId, "admin@wardity.com", "Admin User", adminPasswordHash, "admin");
 
   // Create categories
   console.log("📁 Creating categories...");
@@ -190,8 +199,10 @@ async function seed(): Promise<void> {
 
   console.log("✅ Database seeded successfully!");
   console.log("\n📝 Test credentials:");
-  console.log("   Email: test@example.com");
-  console.log("   Password: password123");
+  console.log("   Customer Email: test@example.com");
+  console.log("   Customer Password: password123");
+  console.log("   Admin Email: admin@wardity.com");
+  console.log("   Admin Password: admin123");
   console.log("\n🚀 You can now start the server with: npm run dev");
 }
 
@@ -199,4 +210,3 @@ seed().catch((error) => {
   console.error("❌ Error seeding database:", error);
   process.exit(1);
 });
-

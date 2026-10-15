@@ -4,15 +4,19 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBlock } from "@/components/ui/ErrorBlock";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { formatCurrency } from "@/utils/formatters";
-import { Link } from "react-router-dom";
-import { ArrowLeftIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
+import { Link, useNavigate } from "react-router-dom";
+import { api } from "@/services/api";
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { trackInitiateCheckout, trackPurchase } from "@/lib/tracking";
+import { useConsent } from "@/contexts/ConsentContext";
 
 export const Checkout: FC = () => {
   const { cart, clearCart } = useCart();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [orderPlaced, setOrderPlaced] = useState(false);
+  const { choice } = useConsent();
 
   const [formData, setFormData] = useState({
     firstName: user?.name.split(" ")[0] || "",
@@ -27,7 +31,7 @@ export const Checkout: FC = () => {
     notes: "",
   });
 
-  if (cart.items.length === 0 && !orderPlaced) {
+  if (cart.items.length === 0) {
     return (
       <div className="min-h-screen bg-wardity-bg py-12">
         <div className="container mx-auto px-4">
@@ -47,36 +51,6 @@ export const Checkout: FC = () => {
     );
   }
 
-  if (orderPlaced) {
-    return (
-      <div className="min-h-screen bg-wardity-bg py-12">
-        <div className="container mx-auto px-4">
-          <div className="max-w-2xl mx-auto text-center py-16">
-            <CheckCircleIcon className="w-24 h-24 text-success mx-auto mb-6" />
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">Order Placed Successfully!</h1>
-            <p className="text-gray-600 mb-8">
-              Thank you for your order. We'll send you a confirmation email shortly.
-            </p>
-            <div className="flex gap-4 justify-center">
-              <Link
-                to="/orders"
-                className="bg-primary text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary-600 transition-colors"
-              >
-                View Orders
-              </Link>
-              <Link
-                to="/"
-                className="bg-gray-200 text-gray-700 px-8 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
-              >
-                Continue Shopping
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -88,10 +62,19 @@ export const Checkout: FC = () => {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const eventId = choice === "accepted" ? trackInitiateCheckout(cart.total, cart.items.map((item) => ({ id: item.product.id, price: item.product.salePrice ?? item.product.price, quantity: item.quantity }))) : undefined;
+      const order = await api.post<{ id: string; total: number; items: Array<{ product: { id: string }; quantity: number; price: number }> }>("/orders", {
+        shippingAddress: `${formData.address}, ${formData.city}, ${formData.postalCode}`,
+        paymentMethod: "cash_on_delivery",
+        eventId,
+        consent: choice === "accepted",
+        email: formData.email,
+        phone: formData.phone,
+        sourceUrl: window.location.href,
+      });
       clearCart();
-      setOrderPlaced(true);
+      if (choice === "accepted") trackPurchase(order.id, order.total, order.items.map((item) => ({ id: item.product.id, price: item.price, quantity: item.quantity })), eventId);
+      navigate(`/orders/${encodeURIComponent(order.id)}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to place order. Please try again.");
     } finally {
@@ -360,4 +343,3 @@ export const Checkout: FC = () => {
     </div>
   );
 };
-

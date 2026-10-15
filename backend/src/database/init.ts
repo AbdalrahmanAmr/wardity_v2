@@ -1,16 +1,23 @@
-import Database from "better-sqlite3";
-import { join } from "path";
+import Database, { Database as DatabaseType } from "better-sqlite3";
+import { dirname, resolve } from "path";
+import { fileURLToPath } from "url";
 import { existsSync, mkdirSync } from "fs";
 
-const DB_PATH = process.env.DATABASE_PATH || join(process.cwd(), "data", "wardity.db");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const backendDir = resolve(__dirname, "../..");
+export const DB_PATH = resolve(
+  backendDir,
+  process.env.DATABASE_PATH || "data/wardity.db",
+);
 
 // Ensure data directory exists
-const dbDir = join(DB_PATH, "..");
+const dbDir = dirname(DB_PATH);
 if (!existsSync(dbDir)) {
   mkdirSync(dbDir, { recursive: true });
 }
 
-export const db = new Database(DB_PATH);
+export const db: DatabaseType = new Database(DB_PATH);
 db.pragma("journal_mode = WAL"); // Write-Ahead Logging for better concurrency
 
 /**
@@ -25,10 +32,19 @@ export function initializeDatabase(): void {
       name TEXT NOT NULL,
       password_hash TEXT NOT NULL,
       phone TEXT,
+      role TEXT NOT NULL DEFAULT 'customer',
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
+
+  // Migration: Add role column if it doesn't exist
+  const usersTableInfo = db.pragma("table_info('users')") as Array<{ name: string }>;
+  const hasRoleColumn = usersTableInfo.some((col) => col.name === "role");
+  if (!hasRoleColumn) {
+    db.exec(`ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'customer'`);
+    console.log("🛠️ Migration: Added 'role' column to users table");
+  }
 
   // Categories table
   db.exec(`
@@ -74,6 +90,22 @@ export function initializeDatabase(): void {
       FOREIGN KEY (occasion_id) REFERENCES occasions(id)
     )
   `);
+
+  const productsTableInfo = db.pragma("table_info('products')") as Array<{ name: string }>;
+  const productColumns = new Set(productsTableInfo.map((column) => column.name));
+  const migrations: Array<[string, string]> = [
+    ["sale_price", "ALTER TABLE products ADD COLUMN sale_price REAL"],
+    ["is_on_sale", "ALTER TABLE products ADD COLUMN is_on_sale INTEGER NOT NULL DEFAULT 0"],
+    ["sale_ends_at", "ALTER TABLE products ADD COLUMN sale_ends_at TEXT"],
+    ["stock_quantity", "ALTER TABLE products ADD COLUMN stock_quantity INTEGER"],
+  ];
+  for (const [column, statement] of migrations) {
+    if (!productColumns.has(column)) {
+      db.exec(statement);
+      console.log(`🛠️ Migration: Added '${column}' column to products table`);
+    }
+  }
+  db.exec("UPDATE products SET is_on_sale = 0 WHERE is_on_sale IS NULL");
 
   // Product gallery table
   db.exec(`
@@ -141,6 +173,12 @@ export function initializeDatabase(): void {
     )
   `);
 
+  const ordersTableInfo = db.pragma("table_info('orders')") as Array<{ name: string }>;
+  if (!ordersTableInfo.some((column) => column.name === "event_id")) {
+    db.exec("ALTER TABLE orders ADD COLUMN event_id TEXT");
+    console.log("🛠️ Migration: Added 'event_id' column to orders table");
+  }
+
   // Order items table
   db.exec(`
     CREATE TABLE IF NOT EXISTS order_items (
@@ -166,4 +204,3 @@ export function initializeDatabase(): void {
 
   console.log("✅ Database initialized successfully");
 }
-

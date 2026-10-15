@@ -5,12 +5,19 @@ export interface Product {
   id: string;
   name: string;
   price: number;
+  salePrice?: number | null;
+  isOnSale?: boolean;
+  discountPercent?: number;
+  saleEndsAt?: string | null;
+  stockQuantity?: number | null;
   badge?: string | null;
   image: string;
+  images?: string[];
   imageDesc?: string;
   brandLogo?: string | null;
   status?: "In stock" | "Out of stock";
   sku?: string;
+  description?: string;
 }
 
 export interface ProductDetail extends Product {
@@ -49,4 +56,3 @@ export interface Bundle {
   };
   totalBundlePrice: number;
 }
-

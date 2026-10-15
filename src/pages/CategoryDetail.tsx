@@ -10,7 +10,7 @@ export const CategoryDetail: FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const { data: category, isLoading: categoryLoading } = useCategory(slug || "");
   const { data: products, isLoading: productsLoading, isError, error } = useProducts(
-    category ? { category: category.name } : undefined
+    category?.name ? { category: category.name } : slug ? { category: slug } : undefined
   );
 
   if (categoryLoading) {

@@ -33,12 +33,13 @@ authRouter.post("/register", async (req, res: Response) => {
 
   // Create user
   const userId = generateId();
+  const role = "customer";
   db.prepare(
-    "INSERT INTO users (id, email, name, password_hash) VALUES (?, ?, ?, ?)"
-  ).run(userId, email, name, passwordHash);
+    "INSERT INTO users (id, email, name, password_hash, role) VALUES (?, ?, ?, ?, ?)"
+  ).run(userId, email, name, passwordHash, role);
 
   // Generate token
-  const token = generateToken({ userId, email, name });
+  const token = generateToken({ userId, email, name, role });
 
   res.status(201).json({
     data: {
@@ -63,13 +64,14 @@ authRouter.post("/login", async (req, res: Response) => {
 
   // Find user
   const user = db
-    .prepare("SELECT id, email, name, password_hash FROM users WHERE email = ?")
+    .prepare("SELECT id, email, name, password_hash, role FROM users WHERE email = ?")
     .get(email) as
     | {
         id: string;
         email: string;
         name: string;
         password_hash: string;
+        role: string;
       }
     | undefined;
 
@@ -96,6 +98,7 @@ authRouter.post("/login", async (req, res: Response) => {
     userId: user.id,
     email: user.email,
     name: user.name,
+    role: user.role,
   });
 
   res.json({
@@ -104,6 +107,7 @@ authRouter.post("/login", async (req, res: Response) => {
         id: user.id,
         email: user.email,
         name: user.name,
+        role: user.role,
       },
       token,
     },
@@ -118,13 +122,14 @@ authRouter.post("/login", async (req, res: Response) => {
  */
 authRouter.get("/me", authenticateToken, (req: AuthRequest, res: Response) => {
   const user = db
-    .prepare("SELECT id, email, name, phone FROM users WHERE id = ?")
+    .prepare("SELECT id, email, name, phone, role FROM users WHERE id = ?")
     .get(req.userId) as
     | {
         id: string;
         email: string;
         name: string;
         phone: string | null;
+        role: string;
       }
     | undefined;
 
@@ -142,6 +147,7 @@ authRouter.get("/me", authenticateToken, (req: AuthRequest, res: Response) => {
       email: user.email,
       name: user.name,
       phone: user.phone || undefined,
+      role: user.role,
     },
     message: "User profile retrieved successfully",
     status: 200,
@@ -207,4 +213,3 @@ authRouter.patch(
     });
   }
 );
-

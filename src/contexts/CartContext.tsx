@@ -23,7 +23,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [cartItems, setCartItems] = useLocalStorage<CartItem[]>(STORAGE_KEYS.CART, []);
 
   const calculateTotal = useCallback((items: CartItem[]): number => {
-    return items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+    return items.reduce((sum, item) => sum + (item.product.isOnSale && item.product.salePrice ? item.product.salePrice : item.product.price) * item.quantity, 0);
   }, []);
 
   const calculateItemCount = useCallback((items: CartItem[]): number => {
@@ -55,6 +55,9 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
           const updatedItems = [...prevItems];
           const existingItem = updatedItems[existingItemIndex];
           if (existingItem) {
+            if (existingItem.product.status === "Out of stock" || (existingItem.product.stockQuantity != null && existingItem.quantity + quantity > existingItem.product.stockQuantity)) {
+              return prevItems;
+            }
             updatedItems[existingItemIndex] = {
               ...existingItem,
               product: existingItem.product,
@@ -64,6 +67,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
           return updatedItems;
         }
 
+        if (product.status === "Out of stock" || (product.stockQuantity != null && quantity > product.stockQuantity)) return prevItems;
         return [
           ...prevItems,
           {
@@ -124,4 +128,3 @@ export const useCart = (): CartContextType => {
   }
   return context;
 };
-

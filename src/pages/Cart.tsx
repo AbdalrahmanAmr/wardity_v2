@@ -9,10 +9,12 @@ import {
 } from "@heroicons/react/24/outline";
 import { useCart } from "@/contexts/CartContext";
 import { formatCurrency } from "@/utils/formatters";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Cart: FC = () => {
   const { cart, updateQuantity, removeFromCart, clearCart } = useCart();
   const navigate = useNavigate();
+  const { language } = useLanguage();
 
   if (cart.items.length === 0) {
     return (
@@ -57,7 +59,7 @@ export const Cart: FC = () => {
             {cart.items.map((item) => (
               <div
                 key={`${item.product.id}-${item.selectedSize || "default"}`}
-                className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow"
+                className={`bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow ${item.product.status === "Out of stock" ? "border border-red-200" : ""}`}
               >
                 <div className="flex gap-4">
                   {/* Product Image */}
@@ -68,7 +70,7 @@ export const Cart: FC = () => {
                     <img
                       src={item.product.image}
                       alt={item.product.name}
-                      className="w-full h-full object-cover"
+                      className={`w-full h-full object-cover ${item.product.status === "Out of stock" ? "grayscale opacity-60" : ""}`}
                     />
                   </Link>
 
@@ -85,8 +87,9 @@ export const Cart: FC = () => {
                     {item.selectedSize && (
                       <p className="text-sm text-gray-500 mb-2">Size: {item.selectedSize}</p>
                     )}
+                    {item.product.status === "Out of stock" && <p className="text-sm font-semibold text-red-600">{language === "ar" ? "غير متوفر - احذف هذا المنتج للمتابعة" : "Out of stock - remove this item to continue"}</p>}
                     <p className="text-xl font-bold text-primary">
-                      {formatCurrency(item.product.price * item.quantity)}
+                      {formatCurrency((item.product.salePrice ?? item.product.price) * item.quantity)}
                     </p>
                   </div>
 
@@ -95,6 +98,7 @@ export const Cart: FC = () => {
                     <div className="flex items-center border border-gray-200 rounded-lg">
                       <button
                         onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                        disabled={item.product.status === "Out of stock"}
                         className="p-2 text-gray-600 hover:bg-gray-50 transition-colors"
                         aria-label="Decrease quantity"
                       >
@@ -105,6 +109,7 @@ export const Cart: FC = () => {
                       </span>
                       <button
                         onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                        disabled={item.product.status === "Out of stock"}
                         className="p-2 text-gray-600 hover:bg-gray-50 transition-colors"
                         aria-label="Increase quantity"
                       >
@@ -173,7 +178,8 @@ export const Cart: FC = () => {
 
               <button
                 onClick={() => navigate("/checkout")}
-                className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-600 transition-colors mb-4"
+                disabled={cart.items.some((item) => item.product.status === "Out of stock")}
+                className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-600 transition-colors mb-4 disabled:cursor-not-allowed disabled:bg-gray-400"
               >
                 Proceed to Checkout
               </button>
@@ -191,4 +197,3 @@ export const Cart: FC = () => {
     </div>
   );
 };
-

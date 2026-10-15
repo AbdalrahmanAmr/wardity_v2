@@ -1,4 +1,4 @@
-import { FC, useState, useEffect } from "react";
+import { FC, useState, useEffect, useRef } from "react";
 import { useParams, Link, useLoaderData } from "react-router-dom";
 import {
   ShoppingBagIcon,
@@ -16,6 +16,8 @@ import { useProduct } from "@/services/queries/productQueries";
 import { PageLoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { ErrorBlock } from "@/components/ui/ErrorBlock";
 import { shareToFacebook, shareToX, shareGeneric } from "@/utils/share";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { trackAddToCart, trackAddToWishlist, trackViewContent } from "@/lib/tracking";
 
 export const Product: FC = () => {
   const { id: productId } = useParams<{ id: string }>();
@@ -26,6 +28,7 @@ export const Product: FC = () => {
   const [activeTab, setActiveTab] = useState<"description" | "sizes">(
     "description"
   );
+  const trackedProductId = useRef<string | undefined>(undefined);
 
   // Fetch product data using React Query
   const {
@@ -54,20 +57,29 @@ export const Product: FC = () => {
       }
     }
   }, [productData]);
+  useEffect(() => {
+    if (productData && trackedProductId.current !== productData.id) {
+      trackedProductId.current = productData.id;
+      trackViewContent({ id: productData.id, name: productData.name, price: productData.isOnSale && productData.salePrice ? productData.salePrice : productData.price });
+    }
+  }, [productData]);
 
   // Contexts
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
+  const { language } = useLanguage();
 
   // Handlers
   const handleAddToCart = (): void => {
-    if (!productData) return;
+    if (!productData || productData.status === "Out of stock" || productData.stockQuantity === 0) return;
     addToCart(productData, quantity, selectedSize);
+    trackAddToCart({ id: productData.id, name: productData.name, price: productData.isOnSale && productData.salePrice ? productData.salePrice : productData.price, quantity, selectedSize });
   };
 
   const handleToggleWishlist = (): void => {
     if (!productData) return;
     toggleWishlist(productData);
+    if (!isInWishlist(productData.id)) trackAddToWishlist({ id: productData.id, name: productData.name, price: productData.isOnSale && productData.salePrice ? productData.salePrice : productData.price });
   };
 
   // Bundle handler - can be uncommented when bundle data is available
@@ -107,24 +119,44 @@ export const Product: FC = () => {
 
   if (isError) {
     return (
-      <ErrorBlock
-        title="Failed to load product"
-        message={
-          error instanceof Error
-            ? error.message
-            : "An error occurred while loading the product"
-        }
-        onRetry={() => refetch()}
-      />
+      <div className="container mx-auto px-4 py-16 text-center">
+        <ErrorBlock
+          title="Product not found"
+          message={
+            error instanceof Error
+              ? error.message
+              : "An error occurred while loading the product"
+          }
+          onRetry={() => refetch()}
+        />
+        <div className="mt-6">
+          <Link
+            to="/"
+            className="inline-block bg-primary text-white font-medium px-6 py-2.5 rounded-full hover:bg-primary-600 transition-colors shadow-sm text-sm"
+          >
+            ← Back to Shop
+          </Link>
+        </div>
+      </div>
     );
   }
 
   if (!productData) {
     return (
-      <ErrorBlock
-        title="Product not found"
-        message="The product you're looking for doesn't exist or has been removed."
-      />
+      <div className="container mx-auto px-4 py-16 text-center">
+        <ErrorBlock
+          title="Product not found"
+          message="The product you're looking for doesn't exist or has been removed."
+        />
+        <div className="mt-6">
+          <Link
+            to="/"
+            className="inline-block bg-primary text-white font-medium px-6 py-2.5 rounded-full hover:bg-primary-600 transition-colors shadow-sm text-sm"
+          >
+            ← Back to Shop
+          </Link>
+        </div>
+      </div>
     );
   }
 
@@ -159,8 +191,10 @@ export const Product: FC = () => {
                   productData.image
                 }
                 alt={productData.name}
-                className="w-full h-full object-cover"
+                className={`w-full h-full object-cover ${productData.status === "Out of stock" ? "grayscale opacity-60" : ""}`}
               />
+              {productData.status === "Out of stock" && <span className="absolute inset-0 flex items-center justify-center bg-black/20 text-xl font-bold text-white">{language === "ar" ? "غير متوفر" : "Out of stock"}</span>}
+              {productData.isOnSale && <span className="absolute top-4 right-4 rounded-full bg-red-600 px-3 py-1 text-sm font-bold text-white">-{productData.discountPercent}%</span>}
               {productData.badge && (
                 <span className="absolute top-4 left-4 bg-primary text-white text-sm font-bold px-3 py-1 rounded-lg">
                   {productData.badge}
@@ -218,8 +252,9 @@ export const Product: FC = () => {
             {/* Price */}
             <div className="space-y-1">
               <div className="flex items-baseline gap-2">
+                {productData.isOnSale && <span className="text-lg text-gray-400 line-through">{productData.price.toLocaleString()}</span>}
                 <span className="text-3xl font-bold text-primary">
-                  {productData.price.toLocaleString()}
+                  {(productData.salePrice ?? productData.price).toLocaleString()}
                 </span>
                 <span className="text-lg text-gray-500">EGP</span>
               </div>
@@ -274,10 +309,11 @@ export const Product: FC = () => {
               {/* Add to Cart */}
               <button
                 onClick={handleAddToCart}
-                className="flex-1 flex items-center justify-center gap-2 bg-primary text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary-600 transition-all shadow-sm hover:shadow-md"
+                disabled={productData.status === "Out of stock" || productData.stockQuantity === 0}
+                className="flex-1 flex items-center justify-center gap-2 bg-primary text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary-600 transition-all shadow-sm hover:shadow-md disabled:cursor-not-allowed disabled:bg-gray-400"
               >
                 <ShoppingBagIcon className="w-5 h-5" />
-                Add to cart
+                {productData.status === "Out of stock" ? (language === "ar" ? "غير متوفر" : "Out of stock") : (language === "ar" ? "أضف إلى السلة" : "Add to cart")}
               </button>
 
               {/* Wishlist */}

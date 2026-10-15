@@ -36,7 +36,7 @@ export function useProduct(id: string) {
 export function useProducts(filters?: Record<string, unknown>) {
   return useQuery({
     queryKey: productQueryKeys.list(filters),
-    queryFn: () => {
+    queryFn: async () => {
       const queryString = filters
         ? `?${new URLSearchParams(
             Object.entries(filters).reduce(
@@ -50,7 +50,11 @@ export function useProducts(filters?: Record<string, unknown>) {
             )
           ).toString()}`
         : "";
-      return api.get<Product[]>(`/products${queryString}`);
+      const res = await api.get<Product[] | { data: Product[] }>(`/products${queryString}`);
+      if (res && typeof res === "object" && "data" in res && Array.isArray((res as { data: Product[] }).data)) {
+        return (res as { data: Product[] }).data;
+      }
+      return Array.isArray(res) ? res : [];
     },
     staleTime: 5 * 60 * 1000,
   });

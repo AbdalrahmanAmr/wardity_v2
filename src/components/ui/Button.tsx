@@ -1,7 +1,7 @@
 import { FC, ButtonHTMLAttributes } from "react";
 import { LoadingSpinner } from "./LoadingSpinner";
 
-type ButtonVariant = "primary" | "secondary" | "danger" | "ghost";
+type ButtonVariant = "primary" | "secondary" | "danger" | "ghost" | "outline";
 type ButtonSize = "sm" | "md" | "lg";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -20,6 +20,7 @@ const variantClasses: Record<ButtonVariant, string> = {
   danger:
     "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-sm hover:shadow-md",
   ghost: "text-gray-600 hover:bg-gray-100 active:bg-gray-200",
+  outline: "border border-gray-300 text-gray-700 hover:bg-gray-50 active:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {

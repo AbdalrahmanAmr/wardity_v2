@@ -1,8 +1,28 @@
 import { Router, Response } from "express";
 import { db } from "../database/init.js";
-import { generateId } from "../utils/id.js";
+import { getEffectiveSale, effectiveStatus, ProductSaleFields } from "../utils/productPricing.js";
 
 export const productsRouter = Router();
+
+function formatProduct(product: Record<string, any>) {
+  const sale = getEffectiveSale(product as ProductSaleFields);
+  return {
+    id: product.id,
+    name: product.name,
+    price: product.price,
+    salePrice: sale.salePrice,
+    isOnSale: sale.isOnSale,
+    discountPercent: sale.discountPercent,
+    saleEndsAt: product.sale_ends_at,
+    stockQuantity: product.stock_quantity,
+    badge: product.badge,
+    image: product.image,
+    imageDesc: product.image_desc,
+    brandLogo: product.brand_logo,
+    status: effectiveStatus(product as ProductSaleFields),
+    sku: product.sku,
+  };
+}
 
 /**
  * GET /api/products
@@ -18,6 +38,8 @@ productsRouter.get("/", (req, res: Response) => {
     minPrice,
     maxPrice,
     status,
+    badge,
+    bestSeller,
   } = req.query;
 
   const pageNum = parseInt(page as string, 10);
@@ -28,13 +50,20 @@ productsRouter.get("/", (req, res: Response) => {
   const params: unknown[] = [];
 
   if (category) {
-    query += " AND category_id = ?";
-    params.push(category);
+    query += " AND (category_id = ? OR category_id IN (SELECT id FROM categories WHERE name = ? COLLATE NOCASE OR slug = ? COLLATE NOCASE))";
+    params.push(category, category, category);
   }
 
   if (occasion) {
-    query += " AND occasion_id = ?";
-    params.push(occasion);
+    query += " AND (occasion_id = ? OR occasion_id IN (SELECT id FROM occasions WHERE name = ? COLLATE NOCASE OR slug = ? COLLATE NOCASE))";
+    params.push(occasion, occasion, occasion);
+  }
+
+  if (badge) {
+    query += " AND badge = ?";
+    params.push(badge);
+  } else if (bestSeller === "true") {
+    query += " AND badge = 'Best Seller'";
   }
 
   if (search) {
@@ -81,17 +110,7 @@ productsRouter.get("/", (req, res: Response) => {
     occasion_id: string | null;
   }>;
 
-  const formattedProducts = products.map((p) => ({
-    id: p.id,
-    name: p.name,
-    price: p.price,
-    badge: p.badge,
-    image: p.image,
-    imageDesc: p.image_desc,
-    brandLogo: p.brand_logo,
-    status: p.status as "In stock" | "Out of stock",
-    sku: p.sku,
-  }));
+  const formattedProducts = products.map((p) => formatProduct(p));
 
   // If pagination is requested, return paginated response
   if (page || pageSize) {
@@ -139,17 +158,7 @@ productsRouter.get("/search", (req, res: Response) => {
     sku: string | null;
   }>;
 
-  const formattedProducts = products.map((p) => ({
-    id: p.id,
-    name: p.name,
-    price: p.price,
-    badge: p.badge,
-    image: p.image,
-    imageDesc: p.image_desc,
-    brandLogo: p.brand_logo,
-    status: p.status as "In stock" | "Out of stock",
-    sku: p.sku,
-  }));
+  const formattedProducts = products.map((p) => formatProduct(p));
 
   res.json(formattedProducts);
 });
@@ -206,15 +215,7 @@ productsRouter.get("/:id", (req, res: Response) => {
     : [];
 
   res.json({
-    id: product.id,
-    name: product.name,
-    price: product.price,
-    badge: product.badge,
-    image: product.image,
-    imageDesc: product.image_desc,
-    brandLogo: product.brand_logo,
-    status: product.status as "In stock" | "Out of stock",
-    sku: product.sku,
+    ...formatProduct(product),
     description: product.description,
     gallery: {
       mainImage: gallery?.main_image || product.image,
@@ -223,4 +224,3 @@ productsRouter.get("/:id", (req, res: Response) => {
     sizes: sizes.length > 0 ? sizes : undefined,
   });
 });
-

@@ -6,6 +6,7 @@ import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { ErrorBlock } from "@/components/ui/ErrorBlock";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { useDebounce } from "@/hooks/useDebounce";
+import { trackSearch } from "@/lib/tracking";
 
 export const Search: FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -20,6 +21,7 @@ export const Search: FC = () => {
       setSearchParams({});
     }
   }, [debouncedSearch, setSearchParams]);
+  useEffect(() => { if (debouncedSearch) trackSearch(debouncedSearch); }, [debouncedSearch]);
 
   const { data: products, isLoading, isError, error } = useSearchProducts(debouncedSearch);
 
@@ -76,4 +78,3 @@ export const Search: FC = () => {
     </div>
   );
 };
-

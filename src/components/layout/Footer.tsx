@@ -1,5 +1,6 @@
 import { FC } from "react";
 import { Link } from "react-router-dom";
+import { useConsent } from "@/contexts/ConsentContext";
 
 const footerLinks = {
   shop: [
@@ -22,6 +23,7 @@ const footerLinks = {
 };
 
 export const Footer: FC = () => {
+  const { openSettings } = useConsent();
   return (
     <footer className="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
       {/* Main Footer */}
@@ -149,6 +151,9 @@ export const Footer: FC = () => {
               © {new Date().getFullYear()} Wardity. All rights reserved.
             </p>
             <div className="flex items-center gap-4">
+              <button type="button" onClick={openSettings} className="text-sm text-gray-500 hover:text-primary">
+                Cookie settings / إعدادات الخصوصية
+              </button>
               <img
                 src="https://placehold.co/40x25/f3f4f6/9ca3af?text=Visa"
                 alt="INSTAPAY"

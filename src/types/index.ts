@@ -24,6 +24,7 @@ export type { Category, Occasion } from "./category";
 
 // Cart types
 export type { CartItem, Cart } from "./cart";
+export type { Order, OrderItem, OrderStatus } from "./order";
 
 // Common types
 export type {

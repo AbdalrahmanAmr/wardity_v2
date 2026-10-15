@@ -10,6 +10,7 @@ import {
   WishlistProvider,
   LanguageProvider,
   DeliveryLocationProvider,
+  ConsentProvider,
 } from "@/contexts";
 import { queryClient } from "./services/queryClient";
 import { router } from "./router";
@@ -37,7 +38,9 @@ createRoot(rootElement).render(
             <AuthProvider>
               <CartProvider>
                 <WishlistProvider>
-                  <RouterProvider router={router} />
+                  <ConsentProvider>
+                    <RouterProvider router={router} />
+                  </ConsentProvider>
                   <ReactQueryDevtools initialIsOpen={false} />
                 </WishlistProvider>
               </CartProvider>

@@ -3,8 +3,28 @@ import { db } from "../database/init.js";
 import { authenticateToken, AuthRequest } from "../middleware/auth.js";
 import { validate, addToCartSchema, updateCartItemSchema } from "../utils/validation.js";
 import { generateId } from "../utils/id.js";
+import { effectiveStatus, getEffectiveSale, ProductSaleFields } from "../utils/productPricing.js";
 
 export const cartRouter = Router();
+
+function formatCartProduct(item: Record<string, any>) {
+  const sale = getEffectiveSale(item as ProductSaleFields);
+  return {
+    id: item.product_id,
+    name: item.name,
+    price: item.price,
+    salePrice: sale.salePrice,
+    isOnSale: sale.isOnSale,
+    discountPercent: sale.discountPercent,
+    stockQuantity: item.stock_quantity,
+    badge: item.badge,
+    image: item.image,
+    imageDesc: item.imageDesc,
+    brandLogo: item.brandLogo,
+    status: effectiveStatus(item as ProductSaleFields),
+    sku: item.sku,
+  };
+}
 
 // All cart routes require authentication
 cartRouter.use(authenticateToken);
@@ -24,6 +44,10 @@ cartRouter.get("/", (req: AuthRequest, res: Response) => {
         p.id as product_id,
         p.name,
         p.price,
+        p.sale_price,
+        p.is_on_sale,
+        p.sale_ends_at,
+        p.stock_quantity,
         p.badge,
         p.image,
         p.image_desc as imageDesc,
@@ -52,23 +76,13 @@ cartRouter.get("/", (req: AuthRequest, res: Response) => {
   }>;
 
   const items = cartItems.map((item) => ({
-    product: {
-      id: item.product_id,
-      name: item.name,
-      price: item.price,
-      badge: item.badge,
-      image: item.image,
-      imageDesc: item.imageDesc,
-      brandLogo: item.brandLogo,
-      status: item.status as "In stock" | "Out of stock",
-      sku: item.sku,
-    },
+    product: formatCartProduct(item),
     quantity: item.quantity,
     selectedSize: item.selectedSize || undefined,
   }));
 
   const total = items.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
+    (sum, item) => sum + (item.product.salePrice ?? item.product.price) * item.quantity,
     0
   );
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -92,14 +106,18 @@ cartRouter.post("/items", (req: AuthRequest, res: Response) => {
 
   // Check if product exists
   const product = db
-    .prepare("SELECT * FROM products WHERE id = ?")
-    .get(productId) as { id: string } | undefined;
+    .prepare("SELECT id, status, stock_quantity FROM products WHERE id = ?")
+    .get(productId) as { id: string; status: string; stock_quantity: number | null } | undefined;
 
   if (!product) {
     res.status(404).json({
       message: "Product not found",
       status: 404,
     });
+    return;
+  }
+  if (product.status === "Out of stock" || (product.stock_quantity !== null && product.stock_quantity < quantity)) {
+    res.status(409).json({ message: "This product is out of stock or does not have enough stock available.", status: 409 });
     return;
   }
 
@@ -115,6 +133,10 @@ cartRouter.post("/items", (req: AuthRequest, res: Response) => {
   if (existingItem) {
     // Update quantity
     const newQuantity = existingItem.quantity + quantity;
+    if (product.stock_quantity !== null && product.stock_quantity < newQuantity) {
+      res.status(409).json({ message: "There is not enough stock available for this quantity.", status: 409 });
+      return;
+    }
     db.prepare("UPDATE cart_items SET quantity = ?, updated_at = datetime('now') WHERE id = ?").run(
       newQuantity,
       existingItem.id
@@ -138,6 +160,10 @@ cartRouter.post("/items", (req: AuthRequest, res: Response) => {
         p.id as product_id,
         p.name,
         p.price,
+        p.sale_price,
+        p.is_on_sale,
+        p.sale_ends_at,
+        p.stock_quantity,
         p.badge,
         p.image,
         p.image_desc as imageDesc,
@@ -166,17 +192,7 @@ cartRouter.post("/items", (req: AuthRequest, res: Response) => {
   }>;
 
   const items = cartItems.map((item) => ({
-    product: {
-      id: item.product_id,
-      name: item.name,
-      price: item.price,
-      badge: item.badge,
-      image: item.image,
-      imageDesc: item.imageDesc,
-      brandLogo: item.brandLogo,
-      status: item.status as "In stock" | "Out of stock",
-      sku: item.sku,
-    },
+    product: formatCartProduct(item),
     quantity: item.quantity,
     selectedSize: item.selectedSize || undefined,
   }));
@@ -200,14 +216,18 @@ cartRouter.patch("/items/:id", (req: AuthRequest, res: Response) => {
 
   // Check if item exists and belongs to user
   const item = db
-    .prepare("SELECT * FROM cart_items WHERE id = ? AND user_id = ?")
-    .get(id, req.userId!) as { id: string } | undefined;
+    .prepare("SELECT ci.id, ci.product_id, p.status, p.stock_quantity FROM cart_items ci JOIN products p ON p.id = ci.product_id WHERE ci.id = ? AND ci.user_id = ?")
+    .get(id, req.userId!) as { id: string; product_id: string; status: string; stock_quantity: number | null } | undefined;
 
   if (!item) {
     res.status(404).json({
       message: "Cart item not found",
       status: 404,
     });
+    return;
+  }
+  if (item.status === "Out of stock" || (item.stock_quantity !== null && item.stock_quantity < quantity)) {
+    res.status(409).json({ message: "There is not enough stock available for this quantity.", status: 409 });
     return;
   }
 
@@ -227,6 +247,10 @@ cartRouter.patch("/items/:id", (req: AuthRequest, res: Response) => {
         p.id as product_id,
         p.name,
         p.price,
+        p.sale_price,
+        p.is_on_sale,
+        p.sale_ends_at,
+        p.stock_quantity,
         p.badge,
         p.image,
         p.image_desc as imageDesc,
@@ -254,17 +278,7 @@ cartRouter.patch("/items/:id", (req: AuthRequest, res: Response) => {
   };
 
   res.json({
-    product: {
-      id: updatedItem.product_id,
-      name: updatedItem.name,
-      price: updatedItem.price,
-      badge: updatedItem.badge,
-      image: updatedItem.image,
-      imageDesc: updatedItem.imageDesc,
-      brandLogo: updatedItem.brandLogo,
-      status: updatedItem.status as "In stock" | "Out of stock",
-      sku: updatedItem.sku,
-    },
+    product: formatCartProduct(updatedItem),
     quantity: updatedItem.quantity,
     selectedSize: updatedItem.selectedSize || undefined,
   });
@@ -304,4 +318,3 @@ cartRouter.delete("/", (req: AuthRequest, res: Response) => {
 
   res.status(204).send();
 });
-

@@ -119,15 +119,25 @@ export const Header: FC = () => {
 
             {/* User Menu */}
             {isAuthenticated ? (
-              <Link
-                to="/profile"
-                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              >
-                <UserIcon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                <span className="hidden sm:block text-sm font-medium text-gray-700 dark:text-gray-200">
-                  {user?.name || "Account"}
-                </span>
-              </Link>
+              <>
+                <Link
+                  to="/profile"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <UserIcon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                  <span className="hidden sm:block text-sm font-medium text-gray-700 dark:text-gray-200">
+                    {user?.name || "Account"}
+                  </span>
+                </Link>
+                {user?.role === "admin" && (
+                  <Link
+                    to="/admin"
+                    className="hidden lg:inline-flex items-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-600"
+                  >
+                    Admin Panel
+                  </Link>
+                )}
+              </>
             ) : (
               <Link
                 to="/login"
@@ -216,6 +226,17 @@ export const Header: FC = () => {
             </button>
 
             {/* Wishlist - Mobile */}
+            {user?.role === "admin" && (
+              <Link
+                to="/admin"
+                onClick={() => setIsMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary/5 text-primary hover:bg-primary/10 transition-colors mb-2 font-semibold"
+              >
+                <span aria-hidden="true">✦</span>
+                <span className="text-sm">Admin Panel</span>
+              </Link>
+            )}
+
             <Link
               to="/wishlist"
               onClick={() => setIsMenuOpen(false)}
@@ -235,4 +256,3 @@ export const Header: FC = () => {
     </header>
   );
 };
-

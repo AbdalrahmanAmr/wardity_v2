@@ -14,18 +14,20 @@ interface HeroSlide {
 const heroSlides: HeroSlide[] = [
   {
     id: "1",
-    headline: "Roses meet Fleur chocolate love takes shape",
+    headline: "Flowers for Feelings",
     ctaText: "Gift Now",
     ctaLink: "/collections/love-collection",
-    image: "https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?w=1200&h=600&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?w=1200&h=600&fit=crop",
   },
   {
     id: "2",
-    headline: "New Year, New Beginnings",
-    subHeadline: "Celebrate with our festive collection",
+    headline: "Speak from the Heart",
+    subHeadline: "With our premium bouquets",
     ctaText: "Shop Now",
     ctaLink: "/collections/new-year",
-    image: "https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=1200&h=600&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=1200&h=600&fit=crop",
   },
   {
     id: "3",
@@ -33,7 +35,8 @@ const heroSlides: HeroSlide[] = [
     subHeadline: "With our premium bouquets",
     ctaText: "Explore",
     ctaLink: "/categories/bouquets",
-    image: "https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=1200&h=600&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=1200&h=600&fit=crop",
   },
 ];
 
@@ -45,7 +48,9 @@ export const HeroBanner: FC = () => {
   };
 
   const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
+    setCurrentSlide(
+      (prev) => (prev - 1 + heroSlides.length) % heroSlides.length,
+    );
   };
 
   const slide = heroSlides[currentSlide];
@@ -119,4 +124,3 @@ export const HeroBanner: FC = () => {
     </section>
   );
 };
-

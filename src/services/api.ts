@@ -9,7 +9,13 @@ const BASE_URL = env.apiUrl;
  */
 function getAuthToken(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem(STORAGE_KEYS.TOKEN);
+  const item = localStorage.getItem(STORAGE_KEYS.TOKEN);
+  if (!item) return null;
+  try {
+    return JSON.parse(item) as string;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -17,7 +23,7 @@ function getAuthToken(): string | null {
  */
 async function fetchWithErrorHandling<T>(
   url: string,
-  options?: RequestInit
+  options?: RequestInit,
 ): Promise<T> {
   const token = getAuthToken();
   const headers: Record<string, string> = {
@@ -40,7 +46,8 @@ async function fetchWithErrorHandling<T>(
       const errorData = await response.json().catch(() => ({}));
       throw {
         code: response.status,
-        message: errorData.message || `Request failed with status ${response.status}`,
+        message:
+          errorData.message || `Request failed with status ${response.status}`,
         details: errorData.errors,
       } as ApiError;
     }
@@ -90,11 +97,13 @@ export const api = {
 /**
  * Helper to create typed API response
  */
-export function createApiResponse<T>(data: T, message = "Success"): ApiResponse<T> {
+export function createApiResponse<T>(
+  data: T,
+  message = "Success",
+): ApiResponse<T> {
   return {
     data,
     message,
     status: 200,
   };
 }
-
