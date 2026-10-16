@@ -1,14 +1,16 @@
 import { FC, useState } from "react";
 import { useAdminOrders, useUpdateOrder } from "@/services/queries/adminQueries";
 import { PageLoadingSpinner, ErrorBlock } from "@/components/ui";
+import { useAdminTranslations } from "@/locales/admin";
 
 export const AdminOrders: FC = () => {
   const { data: orders, isLoading, isError } = useAdminOrders();
   const updateOrder = useUpdateOrder();
+  const t = useAdminTranslations();
   const [updateError, setUpdateError] = useState<string | null>(null);
 
   if (isLoading) return <PageLoadingSpinner />;
-  if (isError) return <ErrorBlock message="Failed to load orders." />;
+  if (isError) return <ErrorBlock message={t.failedOrders} />;
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     setUpdateError(null);
@@ -21,7 +23,7 @@ export const AdminOrders: FC = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold font-serif text-wardity-primary">Orders</h1>
+      <h1 className="text-3xl font-bold font-serif text-wardity-primary">{t.orders}</h1>
       
       {updateError && (
         <ErrorBlock message={updateError} />
@@ -31,11 +33,11 @@ export const AdminOrders: FC = () => {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-800">
-              <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">Order ID</th>
-              <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">User ID</th>
-              <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">Total</th>
-              <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">Date</th>
-              <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">Status</th>
+              <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">{t.orderId}</th>
+              <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">{t.userId}</th>
+              <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">{t.total}</th>
+              <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">{t.date}</th>
+              <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">{t.status}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
@@ -52,18 +54,18 @@ export const AdminOrders: FC = () => {
                     disabled={updateOrder.isPending}
                     className="bg-white dark:bg-wardity-bg-dark border border-gray-300 dark:border-gray-700 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-wardity-primary"
                   >
-                    <option value="pending">Pending</option>
-                    <option value="processing">Processing</option>
-                    <option value="shipped">Shipped</option>
-                    <option value="delivered">Delivered</option>
-                    <option value="cancelled">Cancelled</option>
+                    <option value="pending">{t.pending}</option>
+                    <option value="processing">{t.processing}</option>
+                    <option value="shipped">{t.shipped}</option>
+                    <option value="delivered">{t.delivered}</option>
+                    <option value="cancelled">{t.cancelled}</option>
                   </select>
                 </td>
               </tr>
             ))}
             {(!orders || orders.length === 0) && (
               <tr>
-                <td colSpan={5} className="p-8 text-center text-gray-500">No orders found.</td>
+                <td colSpan={5} className="p-8 text-center text-gray-500">{t.noOrders}</td>
               </tr>
             )}
           </tbody>

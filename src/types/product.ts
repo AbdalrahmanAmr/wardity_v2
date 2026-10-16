@@ -4,6 +4,7 @@
 export interface Product {
   id: string;
   name: string;
+  nameAr?: string | null;
   price: number;
   salePrice?: number | null;
   isOnSale?: boolean;
@@ -18,6 +19,11 @@ export interface Product {
   status?: "In stock" | "Out of stock";
   sku?: string;
   description?: string;
+  descriptionAr?: string | null;
+  categoryId?: string | null;
+  occasionId?: string | null;
+  category_id?: string | null;
+  occasion_id?: string | null;
 }
 
 export interface ProductDetail extends Product {

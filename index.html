@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="wardity">
+<html lang="en" dir="ltr" data-theme="wardity">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
@@ -14,6 +14,17 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
+    <script>
+      (() => {
+        let stored = null;
+        try { stored = localStorage.getItem("wardity-theme"); } catch { /* Continue with the system preference. */ }
+        const value = stored ? (() => { try { return JSON.parse(stored); } catch { return stored; } })() : "system";
+        const theme = value === "dark" || value === "light" || value === "system" ? value : "system";
+        const dark = theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.classList.toggle("dark", dark);
+        document.documentElement.style.colorScheme = dark ? "dark" : "light";
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

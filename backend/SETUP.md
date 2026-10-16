@@ -16,7 +16,12 @@ PORT=3001
 NODE_ENV=development
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 JWT_EXPIRES_IN=7d
-DATABASE_PATH=./data/wardity.db
+DB_DRIVER=mysql
+MYSQL_HOST=127.0.0.1
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=your-local-password
+MYSQL_DATABASE=wardity_import_nofk_20261016
 CORS_ORIGIN=http://localhost:5173
 ```
 
@@ -83,4 +88,3 @@ Delete `data/wardity.db` and run `npm run seed` again
 
 ### CORS Issues
 Make sure `CORS_ORIGIN` in `.env` matches your frontend URL
-

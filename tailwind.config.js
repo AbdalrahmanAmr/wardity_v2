@@ -35,9 +35,9 @@ export default {
           text: "#333333",
           accent: "#D02046",
           // Dark mode colors
-          "bg-dark": "#1a1a1a",
-          "card-dark": "#2d2d2d",
-          "text-dark": "#e5e5e5",
+          "bg-dark": "#241d20",
+          "card-dark": "#30272a",
+          "text-dark": "#fff4ed",
         },
       },
       animation: {

@@ -15,6 +15,7 @@ export const loginSchema = z.object({
 // Product validation schemas
 const productFieldsSchema = z.object({
   name: z.string().min(1, "Product name is required"),
+  nameAr: z.string().optional().nullable(),
   price: z.number().positive("Price must be positive"),
   image: z.string().url("Image must be a valid URL"),
   badge: z.string().optional().nullable(),
@@ -23,8 +24,9 @@ const productFieldsSchema = z.object({
   status: z.enum(["In stock", "Out of stock"]).optional(),
   sku: z.string().optional(),
   description: z.string().optional(),
-  categoryId: z.string().optional(),
-  occasionId: z.string().optional(),
+  descriptionAr: z.string().optional().nullable(),
+  categoryId: z.string().min(1, "Category selection is invalid").optional().nullable(),
+  occasionId: z.string().min(1, "Occasion selection is invalid").optional().nullable(),
   salePrice: z.number().positive("Sale price must be positive").optional().nullable(),
   isOnSale: z.boolean().optional(),
   saleEndsAt: z.string().datetime().optional().nullable(),

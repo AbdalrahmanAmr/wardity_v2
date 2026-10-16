@@ -2,21 +2,23 @@ import { FC } from "react";
 import { Link } from "react-router-dom";
 import { useAdminStats } from "@/services/queries/adminQueries";
 import { PageLoadingSpinner, ErrorBlock } from "@/components/ui";
+import { useAdminTranslations } from "@/locales/admin";
 
 export const AdminDashboard: FC = () => {
   const { data: stats, isLoading, isError } = useAdminStats();
+  const t = useAdminTranslations();
 
   if (isLoading) return <PageLoadingSpinner />;
-  if (isError) return <ErrorBlock message="Failed to load admin stats." />;
+  if (isError) return <ErrorBlock message={t.failedProducts} />;
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold font-serif text-wardity-primary">Dashboard</h1>
+      <h1 className="text-3xl font-bold font-serif text-wardity-primary">{t.dashboard}</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard title="Total Products" value={stats?.productsCount} link="/admin/products" />
-        <StatCard title="Total Orders" value={stats?.ordersCount} link="/admin/orders" />
-        <StatCard title="Total Users" value={stats?.usersCount} link="/admin/users" />
+        <StatCard title={t.totalProducts} value={stats?.productsCount} link="/admin/products" />
+        <StatCard title={t.totalOrders} value={stats?.ordersCount} link="/admin/orders" />
+        <StatCard title={t.totalUsers} value={stats?.usersCount} link="/admin/users" />
       </div>
     </div>
   );

@@ -208,6 +208,10 @@ Wardity/
 
 ## 🚀 Getting Started
 
+### Owner setup guides
+
+Contact channel defaults, visibility switches, and channel setup notes are documented in the [Wardity setup guides](./docs/setup/README.md).
+
 ### Prerequisites
 
 - **Node.js**: 18.0.0 or higher

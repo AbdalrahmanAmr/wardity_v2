@@ -14,7 +14,8 @@ function getAuthToken(): string | null {
   try {
     return JSON.parse(item) as string;
   } catch {
-    return null;
+    // Keep compatibility with tokens written by older clients without JSON encoding.
+    return item;
   }
 }
 

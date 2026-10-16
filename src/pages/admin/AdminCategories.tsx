@@ -3,132 +3,36 @@ import { useCategories } from "@/services/queries/categoryQueries";
 import { useCreateCategory, useUpdateCategory, useDeleteCategory } from "@/services/queries/adminQueries";
 import { PageLoadingSpinner, ErrorBlock, Button, Input, Toast } from "@/components/ui";
 import { getErrorMessage } from "@/utils/errorMessage";
+import { categoryIcons } from "@/constants/taxonomyIcons";
 import type { Category } from "@/types";
+import { ImageUploader } from "@/components/admin/ImageUploader";
+import { useAdminTranslations } from "@/locales/admin";
 
 export const AdminCategories: FC = () => {
-  const { data: categories, isLoading, isError } = useCategories();
-  const createCategory = useCreateCategory();
-  const updateCategory = useUpdateCategory();
-  const deleteCategory = useDeleteCategory();
-
-  const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
+  const query = useCategories();
+  const create = useCreateCategory();
+  const update = useUpdateCategory();
+  const remove = useDeleteCategory();
+  const [editing, setEditing] = useState<Partial<Category> | null>(null);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
-
-  if (isLoading) return <PageLoadingSpinner />;
-  if (isError) return <ErrorBlock message="Failed to load categories." />;
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingCategory?.id) {
-      try {
-        await updateCategory.mutateAsync(editingCategory as Category & { id: string });
-        setToast({ type: "success", message: "Category updated successfully." });
-      } catch (error) {
-        setToast({ type: "error", message: getErrorMessage(error) });
-        return;
-      }
-    } else {
-      try {
-        await createCategory.mutateAsync(editingCategory as Partial<Category>);
-        setToast({ type: "success", message: "Category created successfully." });
-      } catch (error) {
-        setToast({ type: "error", message: getErrorMessage(error) });
-        return;
-      }
-    }
-    setEditingCategory(null);
+  const t = useAdminTranslations();
+  if (query.isLoading) return <PageLoadingSpinner />;
+  if (query.isError) return <ErrorBlock message={t.failedCategories} />;
+  const save = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!editing?.name?.trim()) { setToast({ type: "error", message: t.requiredCategory }); return; }
+    try {
+      if (editing.id) await update.mutateAsync({ ...editing, id: editing.id });
+      else await create.mutateAsync(editing);
+      setEditing(null);
+      setToast({ type: "success", message: editing.id ? t.updated : t.created });
+    } catch (error) { setToast({ type: "error", message: getErrorMessage(error) }); }
   };
-
-  const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this category?")) {
-      try {
-        await deleteCategory.mutateAsync(id);
-        setToast({ type: "success", message: "Category deleted successfully." });
-      } catch (error) {
-        setToast({ type: "error", message: getErrorMessage(error) });
-      }
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      {toast && <Toast {...toast} onClose={() => setToast(null)} />}
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold font-serif text-wardity-primary">Categories</h1>
-        <Button onClick={() => setEditingCategory({ name: "", bg_color: "#FFFFFF" })}>Add Category</Button>
-      </div>
-
-      <div className="bg-white dark:bg-wardity-card-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-800">
-              <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">Name</th>
-              <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">Slug</th>
-              <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">Image Type</th>
-              <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-            {categories?.map((cat) => (
-              <tr key={cat.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/20">
-                <td className="p-4 font-medium">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 rounded-full border border-gray-200" style={{ backgroundColor: cat.bgColor || cat.bg_color || "transparent" }}></div>
-                    <span>{cat.name}</span>
-                  </div>
-                </td>
-                <td className="p-4 text-gray-500">{cat.slug}</td>
-                <td className="p-4">{cat.imageType || cat.image_type || "-"}</td>
-                <td className="p-4 space-x-2">
-                  <button onClick={() => setEditingCategory(cat)} className="text-blue-500 hover:underline text-sm">Edit</button>
-                  <button
-                    onClick={() => cat.id && handleDelete(cat.id)}
-                    disabled={deleteCategory.isPending}
-                    className="text-red-500 hover:underline text-sm disabled:opacity-50"
-                  >
-                    {deleteCategory.isPending ? "Deleting..." : "Delete"}
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {(!categories || categories.length === 0) && (
-              <tr>
-                <td colSpan={4} className="p-8 text-center text-gray-500">No categories found.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {editingCategory && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white dark:bg-wardity-card-dark rounded-xl shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">{editingCategory.id ? "Edit Category" : "New Category"}</h2>
-            <form onSubmit={handleSave} className="space-y-4">
-              <Input
-                label="Name"
-                value={editingCategory.name || ""}
-                onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
-                required
-              />
-              <Input
-                label="Image Type (e.g. flower, cake)"
-                value={editingCategory.imageType || editingCategory.image_type || ""}
-                onChange={(e) => setEditingCategory({ ...editingCategory, imageType: e.target.value, image_type: e.target.value })}
-              />
-              <Input
-                label="Background Color (hex)"
-                value={editingCategory.bgColor || editingCategory.bg_color || ""}
-                onChange={(e) => setEditingCategory({ ...editingCategory, bgColor: e.target.value, bg_color: e.target.value })}
-              />
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button type="button" variant="outline" onClick={() => setEditingCategory(null)}>Cancel</Button>
-                <Button type="submit" isLoading={createCategory.isPending || updateCategory.isPending}>Save</Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  const slug = (name: string) => name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return <div className="space-y-6">
+    {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+    <div className="flex items-center justify-between"><h1 className="text-3xl font-bold font-serif text-wardity-primary">{t.categories}</h1><Button onClick={() => setEditing({ name: "", slug: "", imageType: "illustration_bouquet", bgColor: "#FFF5F7", sortOrder: 0, isActive: true })}>{t.addCategory}</Button></div>
+    <div className="overflow-x-auto rounded-xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-wardity-card-dark"><table className="w-full min-w-[700px] text-left"><thead><tr className="border-b bg-gray-50 dark:bg-gray-800/50"><th className="p-4">Name</th><th className="p-4">Slug</th><th className="p-4">Icon</th><th className="p-4">Products</th><th className="p-4">Active</th><th className="p-4">Order</th><th className="p-4">Actions</th></tr></thead><tbody className="divide-y dark:divide-gray-800">{query.data?.map((category) => <tr key={category.id}><td className="p-4 font-medium">{category.name}</td><td className="p-4 text-gray-500">{category.slug}</td><td className="p-4 text-2xl">{category.image ? <img src={category.image} alt="" className="h-8 w-8 object-contain" /> : categoryIcons[category.imageType] || "🌸"}</td><td className="p-4">{category.productCount ?? 0}{category.productCount === 0 ? "" : ""}</td><td className="p-4"><span className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-700">Active</span></td><td className="p-4">{category.sortOrder ?? 0}</td><td className="space-x-3 p-4"><button className="text-blue-600 hover:underline" onClick={() => setEditing(category)}>Edit</button><button className="text-red-600 hover:underline disabled:opacity-50" disabled={remove.isPending} onClick={async () => { if (!category.id || !confirm("Delete this category? Products must be reassigned first.")) return; try { await remove.mutateAsync(category.id); setToast({ type: "success", message: "Category deleted." }); } catch (error) { setToast({ type: "error", message: getErrorMessage(error) }); } }}>Delete</button></td></tr>)}</tbody></table></div>
+    {editing && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"><form onSubmit={save} className="w-full max-w-lg space-y-4 rounded-xl bg-white p-6 shadow-xl dark:bg-wardity-card-dark"><h2 className="text-xl font-bold">{editing.id ? t.editCategory : t.newCategory}</h2><Input label={t.nameEn} required value={editing.name || ""} onChange={(e) => setEditing({ ...editing, name: e.target.value, slug: editing.id ? editing.slug : slug(e.target.value) })} /><Input label={t.nameAr} value={editing.nameAr || ""} onChange={(e) => setEditing({ ...editing, nameAr: e.target.value })} /><Input label={t.slug} required value={editing.slug || ""} onChange={(e) => setEditing({ ...editing, slug: e.target.value })} /><label className="block text-sm font-medium">{t.icon}<select className="mt-1 w-full rounded-lg border p-2" value={editing.imageType || ""} onChange={(e) => setEditing({ ...editing, imageType: e.target.value })}>{Object.keys(categoryIcons).map((key) => <option key={key} value={key}>{categoryIcons[key]} {key}</option>)}</select></label><ImageUploader images={editing.image ? [editing.image] : []} onChange={(images) => setEditing({ ...editing, image: images[0] })} /><Input label="Background Color" value={editing.bgColor || ""} onChange={(e) => setEditing({ ...editing, bgColor: e.target.value })} /><Input label={t.order} type="number" value={String(editing.sortOrder ?? 0)} onChange={(e) => setEditing({ ...editing, sortOrder: Number(e.target.value) })} /><label className="flex items-center gap-2"><input type="checkbox" checked={editing.isActive !== false} onChange={(e) => setEditing({ ...editing, isActive: e.target.checked })} /> {t.active}</label><div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setEditing(null)}>{t.cancel}</Button><Button type="submit" isLoading={create.isPending || update.isPending}>{t.save}</Button></div></form></div>}
+  </div>;
 };

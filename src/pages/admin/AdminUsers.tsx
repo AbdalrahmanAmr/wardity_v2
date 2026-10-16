@@ -1,27 +1,29 @@
 import { FC } from "react";
 import { useAdminUsers } from "@/services/queries/adminQueries";
 import { PageLoadingSpinner, ErrorBlock } from "@/components/ui";
+import { useAdminTranslations } from "@/locales/admin";
 
 export const AdminUsers: FC = () => {
   const { data: users, isLoading, isError } = useAdminUsers();
+  const t = useAdminTranslations();
 
   if (isLoading) return <PageLoadingSpinner />;
-  if (isError) return <ErrorBlock message="Failed to load users." />;
+  if (isError) return <ErrorBlock message={t.failedUsers} />;
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold font-serif text-wardity-primary">Users</h1>
+      <h1 className="text-3xl font-bold font-serif text-wardity-primary">{t.users}</h1>
 
       <div className="bg-white dark:bg-wardity-card-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-800">
               <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">ID</th>
-              <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">Name</th>
+              <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">{t.name}</th>
               <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">Email</th>
               <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">Phone</th>
-              <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">Role</th>
-              <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">Joined Date</th>
+              <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">{t.role}</th>
+              <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">{t.joinedDate}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
@@ -41,7 +43,7 @@ export const AdminUsers: FC = () => {
             ))}
             {(!users || users.length === 0) && (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-gray-500">No users found.</td>
+                <td colSpan={6} className="p-8 text-center text-gray-500">{t.noUsers}</td>
               </tr>
             )}
           </tbody>

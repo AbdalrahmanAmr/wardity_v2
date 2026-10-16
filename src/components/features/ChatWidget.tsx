@@ -5,10 +5,10 @@ export const ChatWidget: FC = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-[calc(1rem+env(safe-area-inset-right))] z-50">
       {/* Chat Window */}
       {isOpen && (
-        <div className="absolute bottom-16 right-0 w-80 md:w-96 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl dark:shadow-gray-900/50 overflow-hidden animate-slide-up">
+        <div className="absolute bottom-16 end-0 w-[calc(100vw-2rem)] max-w-96 overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-800 dark:shadow-gray-900/50">
           {/* Header */}
           <div className="bg-primary text-white p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -22,7 +22,7 @@ export const ChatWidget: FC = () => {
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="p-1 hover:bg-white/20 rounded-full transition-colors"
+              className="min-h-11 min-w-11 rounded-full p-2 hover:bg-white/20 transition-colors"
             >
               <XMarkIcon className="w-5 h-5" />
             </button>
@@ -89,4 +89,3 @@ export const ChatWidget: FC = () => {
     </div>
   );
 };
-

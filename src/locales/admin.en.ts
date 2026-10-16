@@ -1,0 +1,17 @@
+export const adminEn = {
+  settings: "Settings", contactSettings: "Contact methods", contactSettingsIntro: "Edit the contact values and choose separately which valid methods appear publicly.",
+  contactPhone: "Phone", contactEmail: "Email", contactWhatsapp: "WhatsApp", contactTelegram: "Telegram", contactValue: "Contact value", showPublicly: "Show on storefront", saveSettings: "Save contact settings", settingsSaved: "Contact settings saved.",
+  phoneHint: "Keep the supplied display number as-is. Add a country code only if needed for international dialing.", emailHint: "A public contact email; email sending is not configured in this project.", whatsappHint: "Enter a phone number. The public link strips spaces and punctuation; use an international country code for wa.me.", telegramHint: "Enter a public Telegram username or https://t.me/username. Never enter a bot token here.", contactRequired: "Enter a value before enabling this contact method.",
+  dashboard: "Dashboard", products: "Products", orders: "Orders", categories: "Categories", occasions: "Occasions", users: "Users",
+  backToStore: "Back to Store", language: "العربية", theme: "Theme", light: "Light", dark: "Dark", system: "System",
+  totalProducts: "Total Products", totalOrders: "Total Orders", totalUsers: "Total Users",
+  addProduct: "Add Product", addCategory: "Add Category", addOccasion: "Add Occasion", editProduct: "Edit Product", newProduct: "New Product",
+  editCategory: "Edit Category", newCategory: "New Category", editOccasion: "Edit Occasion", newOccasion: "New Occasion",
+  name: "Name", nameEn: "Name (EN)", nameAr: "Name (AR)", category: "Category", occasion: "Occasion", noCategory: "No category", noOccasion: "No occasion", carousel: "Homepage carousel", addSlide: "Add slide", noSlides: "No slides found.", moveUp: "Move up", moveDown: "Move down", ctaText: "Button text", ctaTextAr: "Button text (AR)", link: "Destination link", failedCarousel: "Failed to load carousel.", description: "Description", descriptionAr: "Description (AR)",
+  price: "Price", salePrice: "Sale price", stock: "Stock quantity (blank means unlimited)", image: "Image", imageUrl: "Or paste image URL",
+  save: "Save", cancel: "Cancel", delete: "Delete", edit: "Edit", active: "Active", hidden: "Hidden", icon: "Icon", slug: "Slug", order: "Order", productsCount: "Products", actions: "Actions",
+  onSale: "On sale", outOfStock: "Out of stock", status: "Status", discount: "Discount", noProducts: "No products found.", noOrders: "No orders found.", noUsers: "No users found.",
+  requiredCategory: "A category name is required.", requiredOccasion: "An occasion name is required.", created: "Created successfully.", updated: "Updated successfully.", deleted: "Deleted successfully.",
+  failedProducts: "Failed to load products.", failedOrders: "Failed to load orders.", failedUsers: "Failed to load users.", failedCategories: "Failed to load categories.", failedOccasions: "Failed to load occasions.",
+  pending: "Pending", processing: "Processing", shipped: "Shipped", delivered: "Delivered", cancelled: "Cancelled", role: "Role", joinedDate: "Joined Date", orderId: "Order ID", userId: "User ID", date: "Date", total: "Total",
+} as const;

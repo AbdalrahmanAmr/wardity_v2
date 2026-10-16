@@ -15,6 +15,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDeliveryLocation } from "@/contexts/DeliveryLocationContext";
 import { useWishlist } from "@/contexts/WishlistContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Header: FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -25,6 +26,7 @@ export const Header: FC = () => {
   const { wishlist } = useWishlist();
   const [showLocationMenu, setShowLocationMenu] = useState(false);
   const navigate = useNavigate();
+  const { language, toggleLanguage, t } = useLanguage();
   
   const wishlistCount = wishlist.length;
 
@@ -40,37 +42,37 @@ export const Header: FC = () => {
       {/* Top Bar */}
       <div className="bg-primary text-white py-2">
         <div className="container mx-auto px-4 text-center text-sm">
-          🌹 Free delivery on orders over 500 EGP | Same day delivery in Cairo & Giza
+          {t("banner", { threshold: 500 })}
         </div>
       </div>
 
       {/* Main Header */}
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-20 gap-4">
+        <div className="flex min-w-0 items-center justify-between h-20 gap-1 sm:gap-3">
           {/* Logo */}
-          <Link to="/" className="flex-shrink-0">
-            <div className="flex items-center gap-2">
-              <span className="text-3xl">🌷</span>
-              <div>
+          <Link to="/" className="min-w-0 flex-shrink-0">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <span className="text-2xl sm:text-3xl">🌷</span>
+              <div className="min-w-0">
                 <h1 className="text-xl font-bold text-primary">Wardity</h1>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 -mt-1">A Blooming Connection</p>
+                <p className="hidden sm:block text-[10px] text-gray-500 dark:text-gray-400 -mt-1">A Blooming Connection</p>
               </div>
             </div>
           </Link>
 
           {/* Search Bar - Desktop */}
-          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-xl mx-4">
+          <form onSubmit={handleSearch} className="hidden lg:flex flex-1 max-w-xl mx-4">
             <div className="relative w-full">
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="What are you looking for?"
-                className="w-full pl-4 pr-12 py-3 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                placeholder={t("searchPlaceholder")}
+                className="w-full ps-4 pe-12 py-3 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
               />
               <button
                 type="submit"
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-primary text-white rounded-full hover:bg-primary-600 transition-colors"
+                className="absolute end-2 top-1/2 -translate-y-1/2 p-2 bg-primary text-white rounded-full hover:bg-primary-600 transition-colors"
               >
                 <MagnifyingGlassIcon className="w-5 h-5" />
               </button>
@@ -78,9 +80,12 @@ export const Header: FC = () => {
           </form>
 
           {/* Right Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 shrink-0 items-center gap-0.5 sm:gap-2">
+            <button type="button" onClick={toggleLanguage} className="hidden lg:inline-flex rounded-lg px-2 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50" aria-label={language === "ar" ? "Switch language to English" : "Switch language to Arabic"}>{t("languageSwitch")}</button>
             {/* Dark Mode Toggle */}
-            <DarkModeToggle />
+            <div className="hidden lg:block">
+              <DarkModeToggle />
+            </div>
 
             {/* Delivery Location */}
             <div className="hidden lg:block relative">
@@ -88,9 +93,9 @@ export const Header: FC = () => {
                 onClick={() => setShowLocationMenu(!showLocationMenu)}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                <TruckIcon className="w-5 h-5 text-primary" />
+                <TruckIcon className={`w-5 h-5 text-primary ${language === "ar" ? "-scale-x-100" : ""}`} />
                 <div className="text-left">
-                  <p className="text-[10px] text-gray-500">Delivery To</p>
+                  <p className="text-[10px] text-gray-500">{t("deliveryTo")}</p>
                   <p className="text-sm font-medium flex items-center gap-1">
                     {location.name}
                     <ChevronDownIcon className="w-3 h-3" />
@@ -98,7 +103,7 @@ export const Header: FC = () => {
                 </div>
               </button>
               {showLocationMenu && (
-                <div className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 min-w-[200px] z-50">
+                <div className="absolute top-full end-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 min-w-[200px] z-50">
                   {availableLocations.map((loc) => (
                     <button
                       key={loc.id}
@@ -106,7 +111,7 @@ export const Header: FC = () => {
                         setLocation(loc);
                         setShowLocationMenu(false);
                       }}
-                      className={`w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors ${
+                      className={`w-full text-start px-4 py-2 hover:bg-gray-50 transition-colors ${
                         location.id === loc.id ? "bg-primary/5 text-primary" : ""
                       }`}
                     >
@@ -122,11 +127,11 @@ export const Header: FC = () => {
               <>
                 <Link
                   to="/profile"
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  className="flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg px-1.5 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors sm:px-3"
                 >
                   <UserIcon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                  <span className="hidden sm:block text-sm font-medium text-gray-700 dark:text-gray-200">
-                    {user?.name || "Account"}
+                  <span className="hidden lg:block text-sm font-medium text-gray-700 dark:text-gray-200">
+                    {user?.name || t("account")}
                   </span>
                 </Link>
                 {user?.role === "admin" && (
@@ -141,22 +146,22 @@ export const Header: FC = () => {
             ) : (
               <Link
                 to="/login"
-                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg px-1.5 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors sm:px-3"
               >
                 <UserIcon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                <span className="hidden sm:block text-sm font-medium text-gray-700 dark:text-gray-200">Login</span>
+                <span className="hidden lg:block text-sm font-medium text-gray-700 dark:text-gray-200">{t("login")}</span>
               </Link>
             )}
 
             {/* Wishlist */}
             <Link
               to="/wishlist"
-              className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors relative"
+              className="relative flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg px-1.5 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors sm:px-3"
             >
               <HeartIcon className="w-6 h-6 text-gray-600 dark:text-gray-300" />
-              <span className="hidden sm:block text-sm font-medium text-gray-700 dark:text-gray-200">Wishlist</span>
+              <span className="hidden lg:block text-sm font-medium text-gray-700 dark:text-gray-200">{t("wishlist")}</span>
               {wishlistCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-xs font-bold rounded-full flex items-center justify-center">
+                <span dir="ltr" className="absolute -top-1 -end-1 w-5 h-5 bg-primary text-white text-xs font-bold rounded-full flex items-center justify-center">
                   {wishlistCount}
                 </span>
               )}
@@ -165,12 +170,12 @@ export const Header: FC = () => {
             {/* Cart */}
             <Link
               to="/cart"
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/5 hover:bg-primary/10 transition-colors relative"
+              className="relative flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg bg-primary/5 px-1.5 py-2 hover:bg-primary/10 transition-colors sm:px-3"
             >
               <ShoppingBagIcon className="w-6 h-6 text-primary" />
-              <span className="hidden sm:block text-sm font-medium text-primary">Basket</span>
+              <span className="hidden lg:block text-sm font-medium text-primary">{t("basket")}</span>
               {itemCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-xs font-bold rounded-full flex items-center justify-center">
+                <span dir="ltr" className="absolute -top-1 -end-1 w-5 h-5 bg-primary text-white text-xs font-bold rounded-full flex items-center justify-center">
                   {itemCount}
                 </span>
               )}
@@ -178,9 +183,9 @@ export const Header: FC = () => {
 
             {/* Mobile Menu Button */}
             <button
-              className="md:hidden p-2 text-gray-600 dark:text-gray-300 hover:text-primary transition-colors"
+              className="min-h-11 min-w-11 p-2 text-gray-600 dark:text-gray-300 hover:text-primary transition-colors lg:hidden"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+              aria-label={isMenuOpen ? (language === "ar" ? "إغلاق القائمة" : "Close menu") : (language === "ar" ? "فتح القائمة" : "Open menu")}
             >
               {isMenuOpen ? (
                 <XMarkIcon className="w-6 h-6" />
@@ -192,18 +197,18 @@ export const Header: FC = () => {
         </div>
 
         {/* Search Bar - Mobile */}
-        <form onSubmit={handleSearch} className="md:hidden pb-4">
+        <form onSubmit={handleSearch} className="pb-4 lg:hidden">
           <div className="relative w-full">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="What are you looking for?"
-              className="w-full pl-4 pr-12 py-3 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+              placeholder={t("searchPlaceholder")}
+              className="w-full ps-4 pe-12 py-3 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
             />
             <button
               type="submit"
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-primary text-white rounded-full hover:bg-primary-600 transition-colors"
+              className="absolute end-2 top-1/2 -translate-y-1/2 p-2 bg-primary text-white rounded-full hover:bg-primary-600 transition-colors"
             >
               <MagnifyingGlassIcon className="w-5 h-5" />
             </button>
@@ -213,11 +218,16 @@ export const Header: FC = () => {
 
       {/* Mobile Navigation */}
       {isMenuOpen && (
-        <div className="md:hidden bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 animate-slide-down">
+        <div className="lg:hidden bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 animate-slide-down">
           <div className="container mx-auto px-4 py-4">
+            <div className="mb-3 flex min-h-11 items-center justify-between rounded-lg bg-gray-50 px-4 dark:bg-gray-800">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{language === "ar" ? "المظهر" : "Theme"}</span>
+              <DarkModeToggle />
+            </div>
+            <button type="button" onClick={toggleLanguage} className="mb-3 w-full rounded-lg px-4 py-3 text-start font-semibold text-primary hover:bg-primary/5">{t("languageSwitch")}</button>
             {/* Delivery Location - Mobile */}
             <button className="flex items-center gap-2 w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-800 mb-4">
-              <TruckIcon className="w-5 h-5 text-primary" />
+              <TruckIcon className={`w-5 h-5 text-primary ${language === "ar" ? "-scale-x-100" : ""}`} />
               <div className="text-left flex-1">
                 <p className="text-[10px] text-gray-500 dark:text-gray-400">Delivery To</p>
                 <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Greater Cairo</p>

@@ -6,6 +6,7 @@ import {
   GiftIcon,
   ShieldCheckIcon,
 } from "@heroicons/react/24/outline";
+import { Carousel } from "@/components/ui";
 import {
   HeroBanner,
   ProductCard,
@@ -13,7 +14,9 @@ import {
   CategoryCard,
 } from "@/components/features";
 import { useProducts } from "@/services/queries/productQueries";
+import { useCategories, useOccasions } from "@/services/queries/categoryQueries";
 import type { Occasion, Category } from "@/types";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // Mock data from JSON
 const occasions: Occasion[] = [
@@ -52,7 +55,12 @@ const categories: Category[] = [
 ];
 
 export const Home: FC = () => {
+  const { t, language } = useLanguage();
   const { data: products, isLoading: productsLoading } = useProducts();
+  const occasionsQuery = useOccasions();
+  const categoriesQuery = useCategories();
+  const homeOccasions = occasionsQuery.isError ? occasions : occasionsQuery.data || [];
+  const homeCategories = categoriesQuery.isError ? categories : categoriesQuery.data || [];
 
   // Flowers bouquets / featured products (up to 6 items)
   const featuredProducts = products?.slice(0, 6) || [];
@@ -73,17 +81,21 @@ export const Home: FC = () => {
         <div className="container mx-auto px-4">
           <div className="mb-8">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
-              Occasions
+              {language === "ar" ? "المناسبات" : "Occasions"}
             </h2>
           </div>
 
-          <div className="flex overflow-x-auto gap-2 md:gap-4 pb-4 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-7">
-            {occasions.map((occasion) => (
-              <div key={occasion.name} className="flex-shrink-0 w-24 md:w-auto">
-                <OccasionCard occasion={occasion} />
-              </div>
+          <Carousel
+            ariaLabel="Occasions"
+            showDots
+            className="-mx-4 px-4 md:mx-0 md:px-0"
+            gapClassName="gap-2 md:gap-4"
+            itemClassName="basis-[calc((100%-1rem)/3)] md:basis-[calc((100%-3rem)/4)] lg:basis-[calc((100%-6rem)/7)]"
+          >
+            {homeOccasions.map((occasion) => (
+              <OccasionCard key={occasion.name} occasion={occasion} />
             ))}
-          </div>
+          </Carousel>
         </div>
       </section>
 
@@ -93,38 +105,34 @@ export const Home: FC = () => {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
-                Flowers bouquets
+                {language === "ar" ? "باقات الزهور" : "Flowers bouquets"}
               </h2>
               <p className="text-gray-600 dark:text-gray-400 mt-1">
-                Celebrate with our festive collection
+                {language === "ar" ? "احتفلوا مع مجموعتنا المميزة" : "Celebrate with our festive collection"}
               </p>
             </div>
             <Link
               to="/collections/new-year"
               className="hidden md:flex items-center gap-1 text-primary font-medium hover:underline"
             >
-              View All
+              {t("viewAll")}
               <ChevronRightIcon className="w-4 h-4" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
-            {productsLoading ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <ProductCardSkeleton key={i} />
-              ))
-            ) : featuredProducts.length > 0 ? (
-              featuredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))
-            ) : (
-              <div className="col-span-full py-12 text-center bg-white/50 dark:bg-gray-800/50 rounded-2xl">
-                <p className="text-gray-500 dark:text-gray-400">
-                  No products available in this collection.
-                </p>
-              </div>
-            )}
-          </div>
+          {productsLoading ? (
+            <Carousel ariaLabel="Featured products" itemClassName="basis-[calc((100%-1rem)/2)] md:basis-[calc((100%-3rem)/3)] lg:basis-[calc((100%-6rem)/4)]">
+              {Array.from({ length: 6 }).map((_, i) => <ProductCardSkeleton key={i} />)}
+            </Carousel>
+          ) : featuredProducts.length > 0 ? (
+            <Carousel ariaLabel="Featured products" showDots itemClassName="basis-[calc((100%-1rem)/2)] md:basis-[calc((100%-3rem)/3)] lg:basis-[calc((100%-6rem)/4)]">
+              {featuredProducts.map((product) => <ProductCard key={product.id} product={product} />)}
+            </Carousel>
+          ) : (
+            <div className="rounded-2xl bg-white/50 py-12 text-center dark:bg-gray-800/50">
+              <p className="text-gray-500 dark:text-gray-400">No products available in this collection.</p>
+            </div>
+          )}
 
           <div className="mt-6 text-center md:hidden">
             <Link
@@ -143,34 +151,30 @@ export const Home: FC = () => {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
-              Best Sellers
+              {t("bestSellers")}
             </h2>
             <Link
               to="/best-sellers"
               className="flex items-center gap-1 text-primary font-medium hover:underline"
             >
-              View More
+              {language === "ar" ? "عرض المزيد" : "View More"}
               <ChevronRightIcon className="w-4 h-4" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            {productsLoading ? (
-              Array.from({ length: 4 }).map((_, i) => (
-                <ProductCardSkeleton key={i} />
-              ))
-            ) : displayBestSellers.length > 0 ? (
-              displayBestSellers.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))
-            ) : (
-              <div className="col-span-full py-12 text-center bg-gray-50 dark:bg-gray-800/50 rounded-2xl">
-                <p className="text-gray-500 dark:text-gray-400">
-                  No best sellers available at the moment.
-                </p>
-              </div>
-            )}
-          </div>
+          {productsLoading ? (
+            <Carousel ariaLabel="Best sellers" itemClassName="basis-[calc((100%-1rem)/2)] md:basis-[calc((100%-3rem)/3)] lg:basis-[calc((100%-6rem)/4)]">
+              {Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)}
+            </Carousel>
+          ) : displayBestSellers.length > 0 ? (
+            <Carousel ariaLabel="Best sellers" showDots itemClassName="basis-[calc((100%-1rem)/2)] md:basis-[calc((100%-3rem)/3)] lg:basis-[calc((100%-6rem)/4)]">
+              {displayBestSellers.map((product) => <ProductCard key={product.id} product={product} />)}
+            </Carousel>
+          ) : (
+            <div className="rounded-2xl bg-gray-50 py-12 text-center dark:bg-gray-800/50">
+              <p className="text-gray-500 dark:text-gray-400">No best sellers available at the moment.</p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -179,15 +183,21 @@ export const Home: FC = () => {
         <div className="container mx-auto px-4">
           <div className="mb-8">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
-              Categories
+              {language === "ar" ? "الفئات" : "Categories"}
             </h2>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            {categories.map((category) => (
+          <Carousel
+            ariaLabel="Categories"
+            wrapAt={4}
+            wrapClassName="grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+            className="-mx-4 px-4 md:mx-0 md:px-0"
+            itemClassName="basis-[calc((100%-1rem)/2)] md:basis-[calc((100%-2rem)/3)] lg:basis-[calc((100%-3rem)/4)]"
+          >
+            {homeCategories.map((category) => (
               <CategoryCard key={category.name} category={category} />
             ))}
-          </div>
+          </Carousel>
         </div>
       </section>
 
@@ -195,7 +205,7 @@ export const Home: FC = () => {
       <section className="py-16 bg-white dark:bg-gray-900 overflow-hidden">
         <div className="container mx-auto px-4">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 text-center mb-12">
-            Our Benefits
+            {language === "ar" ? "مميزاتنا" : "Our Benefits"}
           </h2>
 
           <div className="grid md:grid-cols-2 gap-8 items-center">
@@ -204,7 +214,7 @@ export const Home: FC = () => {
               <div className="relative">
                 <img
                   src="https://images.unsplash.com/photo-1607082349566-187342175e2f?w=600&h=400&fit=crop"
-                  alt="Wardity Delivery"
+                  alt={language === "ar" ? "توصيل ورديتي" : "Wardity Delivery"}
                   className="rounded-2xl shadow-lg w-full"
                 />
                 <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-primary/10 rounded-full" />
@@ -219,26 +229,24 @@ export const Home: FC = () => {
                   <TruckIcon className="w-6 h-6 text-primary" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                  Same-Day Delivery
+                  {language === "ar" ? "توصيل في نفس اليوم" : "Same-Day Delivery"}
                 </h3>
               </div>
               <p className="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
-                Experience same-day flower delivery to Cairo and Giza. Swift
-                shipping, ensuring your sentiments are delivered promptly and
-                your gifts arrive fresh.
+                {language === "ar" ? "استمتعوا بتوصيل الزهور في نفس اليوم إلى القاهرة والجيزة. نضمن وصول مشاعركم وهداياكم طازجة وفي الوقت المناسب." : "Experience same-day flower delivery to Cairo and Giza. Swift shipping, ensuring your sentiments are delivered promptly and your gifts arrive fresh."}
               </p>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <GiftIcon className="w-5 h-5 text-primary" />
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Free Gift Wrapping
+                    {language === "ar" ? "تغليف هدايا مجاني" : "Free Gift Wrapping"}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <ShieldCheckIcon className="w-5 h-5 text-primary" />
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    100% Satisfaction
+                    {language === "ar" ? "رضا بنسبة ١٠٠٪" : "100% Satisfaction"}
                   </span>
                 </div>
               </div>
@@ -251,11 +259,10 @@ export const Home: FC = () => {
       <section className="py-16 bg-gradient-to-r from-primary to-primary-600">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
-            Stay Connected with Wardity
+            {language === "ar" ? "ابقوا على تواصل مع ورديتي" : "Stay Connected with Wardity"}
           </h2>
           <p className="text-white/80 mb-8 max-w-md mx-auto">
-            Subscribe to our newsletter for exclusive offers, new arrivals, and
-            flower care tips.
+            {language === "ar" ? "اشتركوا في نشرتنا للحصول على عروض حصرية وكل جديد ونصائح العناية بالزهور." : "Subscribe to our newsletter for exclusive offers, new arrivals, and flower care tips."}
           </p>
           <form
             onSubmit={(e) => {
@@ -272,7 +279,7 @@ export const Home: FC = () => {
             <input
               type="email"
               name="email"
-              placeholder="Enter your email"
+              placeholder={language === "ar" ? "أدخل بريدك الإلكتروني" : "Enter your email"}
               required
               className="flex-1 px-6 py-3 rounded-full text-gray-900 focus:outline-none focus:ring-2 focus:ring-white/50"
             />
@@ -280,7 +287,7 @@ export const Home: FC = () => {
               type="submit"
               className="px-8 py-3 bg-white text-primary font-semibold rounded-full hover:bg-gray-100 transition-colors"
             >
-              Subscribe
+              {language === "ar" ? "اشتراك" : "Subscribe"}
             </button>
           </form>
         </div>

@@ -4,6 +4,9 @@ import { PageLoadingSpinner, ErrorBlock, Button, Input, Toast } from "@/componen
 import { getErrorMessage } from "@/utils/errorMessage";
 import type { Product } from "@/types";
 import { ImageUploader } from "@/components/admin/ImageUploader";
+import { useAdminTranslations } from "@/locales/admin";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useCategories, useOccasions } from "@/services/queries/categoryQueries";
 
 interface ProductDraft extends Partial<Product> {
   images: string[];
@@ -22,9 +25,13 @@ export const AdminProducts: FC = () => {
   const [selected, setSelected] = useState<string[]>([]);
   const [bulkSalePrice, setBulkSalePrice] = useState("");
   const [bulkSalePercent, setBulkSalePercent] = useState("");
+  const t = useAdminTranslations();
+  const { language } = useLanguage();
+  const categoriesQuery = useCategories();
+  const occasionsQuery = useOccasions();
 
   if (isLoading) return <PageLoadingSpinner />;
-  if (isError) return <ErrorBlock message="Failed to load products." />;
+  if (isError) return <ErrorBlock message={t.failedProducts} />;
   const visibleProducts = products?.filter((product) =>
     filter === "all" || (filter === "sale" && product.isOnSale) ||
     (filter === "out" && product.status === "Out of stock") ||
@@ -36,10 +43,10 @@ export const AdminProducts: FC = () => {
     if (!editingProduct) return;
     try {
       if (editingProduct?.id) {
-        await updateProduct.mutateAsync({ ...editingProduct, image: editingProduct.images[0] || editingProduct.image || "" } as Product & { id: string });
+        await updateProduct.mutateAsync({ ...editingProduct, categoryId: editingProduct.categoryId ?? null, occasionId: editingProduct.occasionId ?? null, image: editingProduct.images[0] || editingProduct.image || "" } as Product & { id: string });
         setToast({ type: "success", message: "Product updated successfully." });
       } else {
-        await createProduct.mutateAsync({ ...editingProduct, image: editingProduct.images[0] || editingProduct.image || "" });
+        await createProduct.mutateAsync({ ...editingProduct, categoryId: editingProduct.categoryId ?? null, occasionId: editingProduct.occasionId ?? null, image: editingProduct.images[0] || editingProduct.image || "" });
         setToast({ type: "success", message: "Product created successfully." });
       }
       setEditingProduct(null);
@@ -63,8 +70,8 @@ export const AdminProducts: FC = () => {
     <div className="space-y-6">
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold font-serif text-wardity-primary">Products</h1>
-        <Button onClick={() => setEditingProduct({ name: "", price: 0, image: "", images: [] })}>Add Product</Button>
+        <h1 className="text-3xl font-bold font-serif text-wardity-primary">{t.products}</h1>
+        <Button onClick={() => setEditingProduct({ name: "", price: 0, image: "", images: [] })}>{t.addProduct}</Button>
       </div>
       <div className="flex flex-wrap gap-2">
         {(["all", "sale", "out", "low"] as const).map((value) => (
@@ -103,7 +110,7 @@ export const AdminProducts: FC = () => {
                 <td className="p-4">
                   <img src={product.image} alt={product.name} className="w-12 h-12 object-cover rounded-lg" />
                 </td>
-                <td className="p-4 font-medium">{product.name}</td>
+                <td className="p-4 font-medium">{product.name}{!product.nameAr && <span className="ms-2 rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-800">{language === "ar" ? "العربية ناقصة" : "Arabic missing"}</span>}</td>
                 <td className="p-4">{product.isOnSale && <span className="mr-2 text-xs text-red-600">-{product.discountPercent}%</span>}${(product.salePrice ?? product.price).toFixed(2)} {product.isOnSale && <del className="text-xs text-gray-400">${product.price.toFixed(2)}</del>}</td>
                 <td className="p-4">
                   <span className={`px-2 py-1 text-xs rounded-full ${product.status === "In stock" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"}`}>
@@ -111,7 +118,7 @@ export const AdminProducts: FC = () => {
                   </span>
                 </td>
                 <td className="p-4 space-x-2">
-                  <button onClick={() => setEditingProduct({ ...product, images: product.images || (product.image ? [product.image] : []) })} className="text-blue-500 hover:underline text-sm">Edit</button>
+                  <button onClick={() => setEditingProduct({ ...product, categoryId: product.categoryId ?? product.category_id ?? null, occasionId: product.occasionId ?? product.occasion_id ?? null, images: product.images || (product.image ? [product.image] : []) })} className="text-blue-500 hover:underline text-sm">Edit</button>
                   <button
                     onClick={() => handleDelete(product.id)}
                     disabled={deleteProduct.isPending}
@@ -142,6 +149,33 @@ export const AdminProducts: FC = () => {
                 onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
                 required
               />
+              <Input
+                label={t.nameAr}
+                value={editingProduct.nameAr || ""}
+                onChange={(e) => setEditingProduct({ ...editingProduct, nameAr: e.target.value })}
+              />
+              <label className="block text-sm font-medium">
+                <span className="mb-1 block">{t.category}</span>
+                <select
+                  value={editingProduct.categoryId ?? ""}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, categoryId: e.target.value || null })}
+                  className="w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 dark:border-gray-600"
+                >
+                  <option value="">{t.noCategory}</option>
+                  {categoriesQuery.data?.map((category) => <option key={category.id} value={category.id}>{language === "ar" && category.nameAr ? `${category.nameAr} (${category.name})` : category.name}</option>)}
+                </select>
+              </label>
+              <label className="block text-sm font-medium">
+                <span className="mb-1 block">{t.occasion}</span>
+                <select
+                  value={editingProduct.occasionId ?? ""}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, occasionId: e.target.value || null })}
+                  className="w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 dark:border-gray-600"
+                >
+                  <option value="">{t.noOccasion}</option>
+                  {occasionsQuery.data?.map((occasion) => <option key={occasion.id} value={occasion.id}>{language === "ar" && occasion.nameAr ? `${occasion.nameAr} (${occasion.name})` : occasion.name}</option>)}
+                </select>
+              </label>
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(editingProduct.isOnSale)} onChange={(e) => setEditingProduct({ ...editingProduct, isOnSale: e.target.checked })} /> On sale</label>
               {editingProduct.isOnSale && <Input label="Sale price" type="number" step="0.01" value={editingProduct.salePrice ?? ""} onChange={(e) => setEditingProduct({ ...editingProduct, salePrice: parseFloat(e.target.value) })} />}
               {editingProduct.isOnSale && editingProduct.salePrice && editingProduct.price && <p className="text-sm text-primary">Discount: {Math.round(((editingProduct.price - editingProduct.salePrice) / editingProduct.price) * 100)}%</p>}
@@ -170,6 +204,11 @@ export const AdminProducts: FC = () => {
                 label="Description"
                 value={editingProduct.description || ""}
                 onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
+              />
+              <Input
+                label={t.descriptionAr}
+                value={editingProduct.descriptionAr || ""}
+                onChange={(e) => setEditingProduct({ ...editingProduct, descriptionAr: e.target.value })}
               />
               <div className="flex justify-end space-x-2 pt-4">
                 <Button type="button" variant="outline" onClick={() => setEditingProduct(null)}>Cancel</Button>

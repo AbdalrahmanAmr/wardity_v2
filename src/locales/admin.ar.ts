@@ -1,0 +1,17 @@
+export const adminAr = {
+  settings: "الإعدادات", contactSettings: "وسائل التواصل", contactSettingsIntro: "عدّل بيانات التواصل واختر بشكل مستقل الوسائل الصالحة التي تظهر للزوار.",
+  contactPhone: "الهاتف", contactEmail: "البريد الإلكتروني", contactWhatsapp: "واتساب", contactTelegram: "تيليجرام", contactValue: "بيانات التواصل", showPublicly: "إظهار في المتجر", saveSettings: "حفظ إعدادات التواصل", settingsSaved: "تم حفظ إعدادات التواصل.",
+  phoneHint: "احتفظ برقم العرض المقدم كما هو. أضف رمز الدولة فقط عند الحاجة للاتصال الدولي.", emailHint: "بريد تواصل عام؛ إرسال البريد غير مهيأ في هذا المشروع.", whatsappHint: "أدخل رقم هاتف. يحذف الرابط العام المسافات والرموز؛ استخدم رمز الدولة الدولي لرابط واتساب.", telegramHint: "أدخل اسم مستخدم عام أو رابط https://t.me/username. لا تدخل رمز بوت هنا.", contactRequired: "أدخل قيمة قبل تفعيل وسيلة التواصل.",
+  dashboard: "لوحة التحكم", products: "المنتجات", orders: "الطلبات", categories: "التصنيفات", occasions: "المناسبات", users: "المستخدمون",
+  backToStore: "العودة للمتجر", language: "English", theme: "المظهر", light: "فاتح", dark: "داكن", system: "النظام",
+  totalProducts: "إجمالي المنتجات", totalOrders: "إجمالي الطلبات", totalUsers: "إجمالي المستخدمين",
+  addProduct: "إضافة منتج", addCategory: "إضافة تصنيف", addOccasion: "إضافة مناسبة", editProduct: "تعديل المنتج", newProduct: "منتج جديد",
+  editCategory: "تعديل التصنيف", newCategory: "تصنيف جديد", editOccasion: "تعديل المناسبة", newOccasion: "مناسبة جديدة",
+  name: "الاسم", nameEn: "الاسم (إنجليزي)", nameAr: "الاسم (عربي)", category: "التصنيف", occasion: "المناسبة", noCategory: "بدون تصنيف", noOccasion: "بدون مناسبة", carousel: "شرائح الصفحة الرئيسية", addSlide: "إضافة شريحة", noSlides: "لا توجد شرائح.", moveUp: "تحريك لأعلى", moveDown: "تحريك لأسفل", ctaText: "نص الزر", ctaTextAr: "نص الزر (عربي)", link: "الرابط", failedCarousel: "تعذر تحميل الشرائح.", description: "الوصف", descriptionAr: "الوصف (عربي)",
+  price: "السعر", salePrice: "سعر التخفيض", stock: "الكمية (فارغ = غير محدود)", image: "الصورة", imageUrl: "أو ألصق رابط الصورة",
+  save: "حفظ", cancel: "إلغاء", delete: "حذف", edit: "تعديل", active: "نشط", hidden: "مخفي", icon: "الأيقونة", slug: "الرابط", order: "الترتيب", productsCount: "المنتجات", actions: "الإجراءات",
+  onSale: "في التخفيض", outOfStock: "غير متوفر", status: "الحالة", discount: "الخصم", noProducts: "لا توجد منتجات.", noOrders: "لا توجد طلبات.", noUsers: "لا يوجد مستخدمون.",
+  requiredCategory: "اسم التصنيف مطلوب.", requiredOccasion: "اسم المناسبة مطلوب.", created: "تم الإنشاء بنجاح.", updated: "تم التحديث بنجاح.", deleted: "تم الحذف بنجاح.",
+  failedProducts: "تعذر تحميل المنتجات.", failedOrders: "تعذر تحميل الطلبات.", failedUsers: "تعذر تحميل المستخدمين.", failedCategories: "تعذر تحميل التصنيفات.", failedOccasions: "تعذر تحميل المناسبات.",
+  pending: "قيد الانتظار", processing: "قيد التجهيز", shipped: "تم الشحن", delivered: "تم التسليم", cancelled: "ملغى", role: "الدور", joinedDate: "تاريخ الانضمام", orderId: "رقم الطلب", userId: "رقم المستخدم", date: "التاريخ", total: "الإجمالي",
+} as const;

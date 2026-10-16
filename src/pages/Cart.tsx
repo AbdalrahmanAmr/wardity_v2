@@ -14,7 +14,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 export const Cart: FC = () => {
   const { cart, updateQuantity, removeFromCart, clearCart } = useCart();
   const navigate = useNavigate();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
 
   if (cart.items.length === 0) {
     return (
@@ -22,16 +22,16 @@ export const Cart: FC = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto text-center py-16">
             <ShoppingBagIcon className="w-24 h-24 text-gray-300 mx-auto mb-6" />
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">Your cart is empty</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">{t("emptyCart")}</h1>
             <p className="text-gray-600 mb-8">
-              Looks like you haven't added anything to your cart yet.
+              {language === "ar" ? "لم تضف أي منتجات إلى سلتك بعد." : "Looks like you haven't added anything to your cart yet."}
             </p>
             <Link
               to="/"
               className="inline-flex items-center gap-2 bg-primary text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary-600 transition-colors"
             >
               <ArrowLeftIcon className="w-5 h-5" />
-              Continue Shopping
+              {t("continueShopping")}
             </Link>
           </div>
         </div>
@@ -49,7 +49,7 @@ export const Cart: FC = () => {
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900">Shopping Cart</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t("cartTitle")}</h1>
           <span className="text-gray-500">({cart.itemCount} items)</span>
         </div>
 
@@ -59,13 +59,13 @@ export const Cart: FC = () => {
             {cart.items.map((item) => (
               <div
                 key={`${item.product.id}-${item.selectedSize || "default"}`}
-                className={`bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow ${item.product.status === "Out of stock" ? "border border-red-200" : ""}`}
+                className={`rounded-xl bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-6 ${item.product.status === "Out of stock" ? "border border-red-200" : ""}`}
               >
-                <div className="flex gap-4">
+                <div className="flex min-w-0 flex-wrap gap-3 sm:flex-nowrap sm:gap-4">
                   {/* Product Image */}
                   <Link
                     to={`/product/${item.product.id}`}
-                    className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden bg-gray-100"
+                    className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 sm:h-24 sm:w-24"
                   >
                     <img
                       src={item.product.image}
@@ -94,12 +94,12 @@ export const Cart: FC = () => {
                   </div>
 
                   {/* Quantity Controls */}
-                  <div className="flex flex-col items-end gap-4">
-                    <div className="flex items-center border border-gray-200 rounded-lg">
+                  <div className="ms-auto flex w-full items-center justify-between gap-3 sm:w-auto sm:flex-col sm:items-end sm:justify-start sm:gap-4">
+                    <div className="flex items-center rounded-lg border border-gray-200">
                       <button
                         onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
                         disabled={item.product.status === "Out of stock"}
-                        className="p-2 text-gray-600 hover:bg-gray-50 transition-colors"
+                        className="min-h-11 min-w-11 p-2 text-gray-600 hover:bg-gray-50 transition-colors"
                         aria-label="Decrease quantity"
                       >
                         <MinusIcon className="w-4 h-4" />
@@ -110,7 +110,7 @@ export const Cart: FC = () => {
                       <button
                         onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
                         disabled={item.product.status === "Out of stock"}
-                        className="p-2 text-gray-600 hover:bg-gray-50 transition-colors"
+                        className="min-h-11 min-w-11 p-2 text-gray-600 hover:bg-gray-50 transition-colors"
                         aria-label="Increase quantity"
                       >
                         <PlusIcon className="w-4 h-4" />
@@ -119,7 +119,7 @@ export const Cart: FC = () => {
 
                     <button
                       onClick={() => removeFromCart(item.product.id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      className="min-h-11 min-w-11 rounded-lg p-2 text-red-600 hover:bg-red-50 transition-colors"
                       aria-label="Remove item"
                     >
                       <TrashIcon className="w-5 h-5" />

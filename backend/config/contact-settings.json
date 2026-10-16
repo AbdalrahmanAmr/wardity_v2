@@ -1,0 +1,14 @@
+{
+  "values": {
+    "phone": "01115239553",
+    "email": "abdalrahmanamr275@gmail.com",
+    "whatsapp": "",
+    "telegram": ""
+  },
+  "enabled": {
+    "phone": false,
+    "email": false,
+    "whatsapp": false,
+    "telegram": false
+  }
+}

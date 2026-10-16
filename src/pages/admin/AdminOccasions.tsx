@@ -3,122 +3,31 @@ import { useOccasions } from "@/services/queries/categoryQueries";
 import { useCreateOccasion, useUpdateOccasion, useDeleteOccasion } from "@/services/queries/adminQueries";
 import { PageLoadingSpinner, ErrorBlock, Button, Input, Toast } from "@/components/ui";
 import { getErrorMessage } from "@/utils/errorMessage";
+import { occasionIcons } from "@/constants/taxonomyIcons";
 import type { Occasion } from "@/types";
+import { ImageUploader } from "@/components/admin/ImageUploader";
+import { useAdminTranslations } from "@/locales/admin";
 
 export const AdminOccasions: FC = () => {
-  const { data: occasions, isLoading, isError } = useOccasions();
-  const createOccasion = useCreateOccasion();
-  const updateOccasion = useUpdateOccasion();
-  const deleteOccasion = useDeleteOccasion();
-
-  const [editingOccasion, setEditingOccasion] = useState<Partial<Occasion> | null>(null);
+  const query = useOccasions();
+  const create = useCreateOccasion();
+  const update = useUpdateOccasion();
+  const remove = useDeleteOccasion();
+  const [editing, setEditing] = useState<Partial<Occasion> | null>(null);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
-
-  if (isLoading) return <PageLoadingSpinner />;
-  if (isError) return <ErrorBlock message="Failed to load occasions." />;
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingOccasion?.id) {
-      try {
-        await updateOccasion.mutateAsync(editingOccasion as Occasion & { id: string });
-        setToast({ type: "success", message: "Occasion updated successfully." });
-      } catch (error) {
-        setToast({ type: "error", message: getErrorMessage(error) });
-        return;
-      }
-    } else {
-      try {
-        await createOccasion.mutateAsync(editingOccasion as Partial<Occasion>);
-        setToast({ type: "success", message: "Occasion created successfully." });
-      } catch (error) {
-        setToast({ type: "error", message: getErrorMessage(error) });
-        return;
-      }
-    }
-    setEditingOccasion(null);
+  const t = useAdminTranslations();
+  if (query.isLoading) return <PageLoadingSpinner />;
+  if (query.isError) return <ErrorBlock message={t.failedOccasions} />;
+  const slug = (name: string) => name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const save = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!editing?.name?.trim()) { setToast({ type: "error", message: t.requiredOccasion }); return; }
+    try { if (editing.id) await update.mutateAsync({ ...editing, id: editing.id }); else await create.mutateAsync(editing); setEditing(null); setToast({ type: "success", message: editing.id ? t.updated : t.created }); } catch (error) { setToast({ type: "error", message: getErrorMessage(error) }); }
   };
-
-  const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this occasion?")) {
-      try {
-        await deleteOccasion.mutateAsync(id);
-        setToast({ type: "success", message: "Occasion deleted successfully." });
-      } catch (error) {
-        setToast({ type: "error", message: getErrorMessage(error) });
-      }
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      {toast && <Toast {...toast} onClose={() => setToast(null)} />}
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold font-serif text-wardity-primary">Occasions</h1>
-        <Button onClick={() => setEditingOccasion({ name: "" })}>Add Occasion</Button>
-      </div>
-
-      <div className="bg-white dark:bg-wardity-card-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-800">
-              <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">Name</th>
-              <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">Slug</th>
-              <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">Image Type</th>
-              <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-            {occasions?.map((occ) => (
-              <tr key={occ.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/20">
-                <td className="p-4 font-medium">{occ.name}</td>
-                <td className="p-4 text-gray-500">{occ.slug}</td>
-                <td className="p-4">{occ.imageType || occ.image_type || "-"}</td>
-                <td className="p-4 space-x-2">
-                  <button onClick={() => setEditingOccasion(occ)} className="text-blue-500 hover:underline text-sm">Edit</button>
-                  <button
-                    onClick={() => occ.id && handleDelete(occ.id)}
-                    disabled={deleteOccasion.isPending}
-                    className="text-red-500 hover:underline text-sm disabled:opacity-50"
-                  >
-                    {deleteOccasion.isPending ? "Deleting..." : "Delete"}
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {(!occasions || occasions.length === 0) && (
-              <tr>
-                <td colSpan={4} className="p-8 text-center text-gray-500">No occasions found.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {editingOccasion && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white dark:bg-wardity-card-dark rounded-xl shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">{editingOccasion.id ? "Edit Occasion" : "New Occasion"}</h2>
-            <form onSubmit={handleSave} className="space-y-4">
-              <Input
-                label="Name"
-                value={editingOccasion.name || ""}
-                onChange={(e) => setEditingOccasion({ ...editingOccasion, name: e.target.value })}
-                required
-              />
-              <Input
-                label="Image Type (e.g. birthday, anniversary)"
-                value={editingOccasion.imageType || editingOccasion.image_type || ""}
-                onChange={(e) => setEditingOccasion({ ...editingOccasion, imageType: e.target.value, image_type: e.target.value })}
-              />
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button type="button" variant="outline" onClick={() => setEditingOccasion(null)}>Cancel</Button>
-                <Button type="submit" isLoading={createOccasion.isPending || updateOccasion.isPending}>Save</Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  return <div className="space-y-6">
+    {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+    <div className="flex items-center justify-between"><h1 className="text-3xl font-bold font-serif text-wardity-primary">{t.occasions}</h1><Button onClick={() => setEditing({ name: "", slug: "", imageType: "3D_snowman_tree", sortOrder: 0, isActive: true })}>{t.addOccasion}</Button></div>
+    <div className="overflow-x-auto rounded-xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-wardity-card-dark"><table className="w-full min-w-[650px] text-left"><thead><tr className="border-b bg-gray-50 dark:bg-gray-800/50"><th className="p-4">Name</th><th className="p-4">Slug</th><th className="p-4">Icon</th><th className="p-4">Products</th><th className="p-4">Active</th><th className="p-4">Order</th><th className="p-4">Actions</th></tr></thead><tbody className="divide-y dark:divide-gray-800">{query.data?.map((occasion) => <tr key={occasion.id}><td className="p-4 font-medium">{occasion.name}</td><td className="p-4 text-gray-500">{occasion.slug}</td><td className="p-4 text-2xl">{occasion.image ? <img src={occasion.image} alt="" className="h-8 w-8 object-contain" /> : occasionIcons[occasion.imageType] || "🎁"}</td><td className="p-4">{occasion.productCount ?? 0}</td><td className="p-4"><span className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-700">Active</span></td><td className="p-4">{occasion.sortOrder ?? 0}</td><td className="space-x-3 p-4"><button className="text-blue-600 hover:underline" onClick={() => setEditing(occasion)}>Edit</button><button className="text-red-600 hover:underline disabled:opacity-50" disabled={remove.isPending} onClick={async () => { if (!occasion.id || !confirm("Delete this occasion? Products must be reassigned first.")) return; try { await remove.mutateAsync(occasion.id); setToast({ type: "success", message: "Occasion deleted." }); } catch (error) { setToast({ type: "error", message: getErrorMessage(error) }); } }}>Delete</button></td></tr>)}</tbody></table></div>
+    {editing && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"><form onSubmit={save} className="w-full max-w-lg space-y-4 rounded-xl bg-white p-6 shadow-xl dark:bg-wardity-card-dark"><h2 className="text-xl font-bold">{editing.id ? t.editOccasion : t.newOccasion}</h2><Input label={t.nameEn} required value={editing.name || ""} onChange={(e) => setEditing({ ...editing, name: e.target.value, slug: editing.id ? editing.slug : slug(e.target.value) })} /><Input label={t.nameAr} value={editing.nameAr || ""} onChange={(e) => setEditing({ ...editing, nameAr: e.target.value })} /><Input label={t.slug} required value={editing.slug || ""} onChange={(e) => setEditing({ ...editing, slug: e.target.value })} /><label className="block text-sm font-medium">{t.icon}<select className="mt-1 w-full rounded-lg border p-2" value={editing.imageType || ""} onChange={(e) => setEditing({ ...editing, imageType: e.target.value })}>{Object.keys(occasionIcons).map((key) => <option key={key} value={key}>{occasionIcons[key]} {key}</option>)}</select></label><ImageUploader images={editing.image ? [editing.image] : []} onChange={(images) => setEditing({ ...editing, image: images[0] })} /><Input label={t.order} type="number" value={String(editing.sortOrder ?? 0)} onChange={(e) => setEditing({ ...editing, sortOrder: Number(e.target.value) })} /><label className="flex items-center gap-2"><input type="checkbox" checked={editing.isActive !== false} onChange={(e) => setEditing({ ...editing, isActive: e.target.checked })} /> {t.active}</label><div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setEditing(null)}>{t.cancel}</Button><Button type="submit" isLoading={create.isPending || update.isPending}>{t.save}</Button></div></form></div>}
+  </div>;
 };

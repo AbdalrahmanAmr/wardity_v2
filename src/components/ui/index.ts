@@ -9,3 +9,4 @@ export { LoadingSpinner, PageLoadingSpinner } from "./LoadingSpinner";
 export { ScrollToTop } from "./ScrollToTop";
 export { SEO } from "./SEO";
 export { Toast } from "./Toast";
+export { Carousel } from "./Carousel";

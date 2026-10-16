@@ -68,6 +68,8 @@ export const Product: FC = () => {
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { language } = useLanguage();
+  const displayProductName = language === "ar" && productData?.nameAr ? productData.nameAr : language === "ar" ? <span lang="en" dir="ltr">{productData?.name}</span> : productData?.name;
+  const displayDescription = language === "ar" && productData?.descriptionAr ? productData.descriptionAr : language === "ar" ? <span lang="en" dir="ltr">{productData?.description || "A beautiful festive arrangement perfect for any celebration."}</span> : productData?.description || "A beautiful festive arrangement perfect for any celebration. Our skilled florists handcraft each piece with care, using only the freshest flowers and premium materials. This stunning display combines elegant blooms with decorative accents to create a memorable gift that will brighten any space.";
 
   // Handlers
   const handleAddToCart = (): void => {
@@ -173,7 +175,7 @@ export const Product: FC = () => {
             Categories
           </Link>
           <span>/</span>
-          <span className="text-gray-900">{productData.name}</span>
+          <span className="text-gray-900" dir="auto">{displayProductName}</span>
         </nav>
       </div>
 
@@ -246,7 +248,7 @@ export const Product: FC = () => {
 
             {/* Title */}
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-              {productData.name}
+              <span dir="auto">{displayProductName}</span>
             </h1>
 
             {/* Price */}
@@ -464,8 +466,7 @@ export const Product: FC = () => {
           <div className="bg-white rounded-xl p-6">
             {activeTab === "description" && (
               <p className="text-gray-600 leading-relaxed">
-                {productData.description ||
-                  "A beautiful festive arrangement perfect for any celebration. Our skilled florists handcraft each piece with care, using only the freshest flowers and premium materials. This stunning display combines elegant blooms with decorative accents to create a memorable gift that will brighten any space."}
+                {displayDescription}
               </p>
             )}
             {activeTab === "sizes" && (

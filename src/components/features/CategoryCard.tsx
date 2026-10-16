@@ -1,23 +1,17 @@
 import { FC } from "react";
 import { Link } from "react-router-dom";
 import type { Category } from "@/types";
+import { categoryIcons } from "@/constants/taxonomyIcons";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface CategoryCardProps {
   category: Category;
 }
 
 // Emoji mapping for category types
-const categoryEmojis: Record<string, string> = {
-  illustration_bouquet: "💐",
-  illustration_box_roses: "🎁",
-  illustration_vase_flowers: "🏺",
-  illustration_potted_plant: "🪴",
-  illustration_ring_box: "💎",
-  illustration_cake: "🍰",
-};
-
 export const CategoryCard: FC<CategoryCardProps> = ({ category }) => {
-  const emoji = categoryEmojis[category.imageType] || "🌸";
+  const { language } = useLanguage();
+  const emoji = categoryIcons[category.imageType] || "🌸";
 
   // Light mode gradient
   const lightGradient = category.bgColor
@@ -29,7 +23,7 @@ export const CategoryCard: FC<CategoryCardProps> = ({ category }) => {
 
   return (
     <Link
-      to={`/categories/${category.name.toLowerCase().replace(/\s+/g, "-")}`}
+      to={`/categories/${category.slug || category.name.toLowerCase().replace(/\s+/g, "-")}`}
       className="group block"
     >
       <div
@@ -51,15 +45,14 @@ export const CategoryCard: FC<CategoryCardProps> = ({ category }) => {
 
         {/* Icon */}
         <div className="relative z-10 text-5xl md:text-6xl mb-3 group-hover:scale-110 transition-transform duration-300">
-          {emoji}
+          {category.image ? <img src={category.image} alt="" className="h-16 w-16 object-contain" /> : emoji}
         </div>
 
         {/* Label */}
         <span className="relative z-10 text-sm md:text-base font-semibold text-gray-800 dark:text-white group-hover:text-primary dark:group-hover:text-primary-300 transition-colors text-center">
-          {category.name}
+          <span dir="auto">{language === "ar" ? category.nameAr || category.name_ar || <span lang="en" dir="ltr">{category.name}</span> : category.name}</span>
         </span>
       </div>
     </Link>
   );
 };
-

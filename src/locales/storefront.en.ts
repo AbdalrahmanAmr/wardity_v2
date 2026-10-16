@@ -1,0 +1,12 @@
+const en = {
+  languageSwitch: "العربية", banner: "🌹 Free delivery on orders over {threshold} EGP | Same day delivery in Cairo & Giza",
+  searchPlaceholder: "What are you looking for?", basket: "Basket", wishlist: "Wishlist", login: "Login", account: "Account", deliveryTo: "Delivery To", light: "Light", dark: "Dark",
+  shop: "Shop", support: "Support", company: "Company", contactUs: "Contact Us", faqs: "FAQs", deliveryInfo: "Delivery Info", trackOrder: "Track Order", aboutUs: "About Us", privacy: "Privacy Policy", terms: "Terms & Conditions", rights: "All rights reserved.", cookieSettings: "Cookie settings",
+  heroTitle: "Flowers for Feelings", giftNow: "Gift Now", bestSellers: "Best Sellers", shopByCategory: "Shop by Category", shopByOccasion: "Shop by Occasion", featuredProducts: "Featured Products", newArrivals: "New Arrivals", viewAll: "View All",
+  addToCart: "Add to cart", outOfStock: "Out of stock", continueShopping: "Continue Shopping", emptyCart: "Your basket is empty", cartTitle: "Shopping Basket", subtotal: "Subtotal", total: "Total", checkout: "Checkout", remove: "Remove", update: "Update", quantity: "Quantity",
+  orders: "My Orders", noOrders: "No orders yet", startShopping: "Start Shopping", viewDetails: "View Details", profile: "Profile", register: "Create account", email: "Email", password: "Password", name: "Name", submit: "Submit", save: "Save", cancel: "Cancel", logout: "Log out",
+  productNotFound: "Product Not Found", notFound: "Page Not Found", backToShop: "Back to Shop", errorTitle: "Something went wrong", tryAgain: "Please try again later.", loading: "Loading...", accept: "Accept", decline: "Decline", cookieMessage: "We use cookies to improve your experience.", cookieTitle: "Your privacy matters", cookieOptional: "We use optional marketing and analytics cookies to improve Wardity.", cookieDetails: "Marketing and analytics are optional and remain off unless you accept.", customize: "Customize",
+  noProducts: "No products found", search: "Search", price: "Price", description: "Description", reviews: "Reviews", size: "Size", color: "Color", availability: "Availability", cartAdded: "Added to basket", required: "This field is required", invalidEmail: "Enter a valid email address", passwordMin: "Password must be at least 8 characters",
+  contact: "Contact", callPhone: "Call {value}", emailUs: "Email {value}", whatsappUs: "Message us on WhatsApp", telegramUs: "Contact us on Telegram",
+} as const;
+export default en;

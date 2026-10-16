@@ -36,6 +36,8 @@ import {
   AdminCategories,
   AdminOccasions,
   AdminUsers,
+  AdminCarousel,
+  AdminSettings,
 } from "@/pages";
 import { categoryLoader, occasionLoader } from "./loaders";
 
@@ -209,6 +211,14 @@ export const router = createBrowserRouter([
       {
         path: "users",
         element: <AdminUsers />,
+      },
+      {
+        path: "carousel",
+        element: <AdminCarousel />,
+      },
+      {
+        path: "settings",
+        element: <AdminSettings />,
       },
     ],
   },

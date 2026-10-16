@@ -1,6 +1,6 @@
 # Wardity Backend API
 
-Backend API server for the Wardity e-commerce platform built with Node.js, Express, TypeScript, and SQLite.
+Backend API server for the Wardity e-commerce platform built with Node.js, Express, TypeScript, and MySQL.
 
 ## Features
 
@@ -19,7 +19,7 @@ Backend API server for the Wardity e-commerce platform built with Node.js, Expre
 - **Runtime**: Node.js
 - **Framework**: Express.js
 - **Language**: TypeScript
-- **Database**: SQLite (with better-sqlite3)
+- **Database**: MySQL (with mysql2)
 - **Authentication**: JWT (jsonwebtoken)
 - **Validation**: Zod
 - **Password Hashing**: bcryptjs
@@ -46,16 +46,16 @@ cp .env.example .env
 ```env
 PORT=3001
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-DATABASE_PATH=./data/wardity.db
+DB_DRIVER=mysql
+MYSQL_HOST=127.0.0.1
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=your-local-password
+MYSQL_DATABASE=wardity_import_nofk_20261016
 CORS_ORIGIN=http://localhost:5173
 ```
 
-4. Seed the database with initial data:
-```bash
-npm run seed
-```
-
-5. Start the development server:
+4. Start the development server:
 ```bash
 npm run dev
 ```
@@ -151,7 +151,6 @@ backend/
 │   ├── scripts/        # Utility scripts (seed, etc.)
 │   ├── utils/          # Helper functions
 │   └── index.ts        # Application entry point
-├── data/               # SQLite database files (gitignored)
 ├── dist/               # Compiled JavaScript (gitignored)
 └── package.json
 ```
@@ -172,12 +171,10 @@ npm start
 
 ## Notes
 
-- The database file is stored in `data/wardity.db` by default
-- SQLite is used for simplicity, but the structure allows easy migration to PostgreSQL
+- The backend requires MySQL and does not create or seed catalog data during startup
 - JWT tokens expire after 7 days by default (configurable via `JWT_EXPIRES_IN`)
 - CORS is configured to allow requests from the frontend origin
 
 ## License
 
 ISC
-

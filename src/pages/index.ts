@@ -33,3 +33,5 @@ export { AdminOrders } from "./admin/AdminOrders";
 export { AdminCategories } from "./admin/AdminCategories";
 export { AdminOccasions } from "./admin/AdminOccasions";
 export { AdminUsers } from "./admin/AdminUsers";
+export { AdminCarousel } from "./admin/AdminCarousel";
+export { AdminSettings } from "./admin/AdminSettings";

@@ -14,9 +14,14 @@ export function useLocalStorage<T>(
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
       const item = window.localStorage.getItem(key);
-      return item ? (JSON.parse(item) as T) : initialValue;
-    } catch (error) {
-      console.warn(`Error reading localStorage key "${key}":`, error);
+      if (!item) return initialValue;
+      try {
+        return JSON.parse(item) as T;
+      } catch {
+        // Keep compatibility with values written by older non-JSON clients.
+        return (typeof initialValue === "string" ? item : initialValue) as T;
+      }
+    } catch {
       return initialValue;
     }
   });
@@ -50,4 +55,3 @@ export function useLocalStorage<T>(
 
   return [storedValue, setValue, removeValue];
 }
-

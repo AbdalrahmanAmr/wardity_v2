@@ -4,20 +4,18 @@ import cors from "cors";
 import "express-async-errors";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { notFoundHandler } from "./middleware/notFoundHandler.js";
-import { authRouter } from "./routes/auth.js";
-import { productsRouter } from "./routes/products.js";
-import { categoriesRouter } from "./routes/categories.js";
-import { occasionsRouter } from "./routes/occasions.js";
-import { cartRouter } from "./routes/cart.js";
-import { wishlistRouter } from "./routes/wishlist.js";
-import { ordersRouter } from "./routes/orders.js";
-import { adminRouter } from "./routes/admin.js";
 import { trackingRouter } from "./routes/tracking.js";
-import { DB_PATH, initializeDatabase } from "./database/init.js";
+import { settingsRouter } from "./routes/settings.js";
 import { UPLOADS_DIR } from "./utils/uploads.js";
 import { mkdirSync } from "fs";
 
-const app = express();
+// ── Database driver selection ──────────────────────────────────────────────
+const DB_DRIVER = (process.env.DB_DRIVER || "").toLowerCase();
+if (DB_DRIVER !== "mysql") {
+  throw new Error("DB_DRIVER must be set to mysql");
+}
+
+const app  = express();
 const PORT = process.env.PORT || 3001;
 const configuredOrigins = (process.env.CORS_ORIGIN || "")
   .split(",")
@@ -25,63 +23,83 @@ const configuredOrigins = (process.env.CORS_ORIGIN || "")
   .filter(Boolean);
 const isDevelopment = process.env.NODE_ENV !== "production";
 
-// Initialize database
-initializeDatabase();
-mkdirSync(UPLOADS_DIR, { recursive: true });
+async function bootstrap() {
+  // ── Initialise database ──────────────────────────────────────────────────
+  const { initMySQL }               = await import("./database/mysql.js");
+  const { initializeDatabaseMySQL } = await import("./database/init-mysql.js");
+  await initMySQL();
+  await initializeDatabaseMySQL();
+  console.log("🗄️  Database driver: MySQL");
 
-// Middleware
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      const isAllowedDevelopmentOrigin =
-        isDevelopment &&
-        !!origin &&
-        /^http:\/\/localhost:51(7[3-9]|80)$/.test(origin);
-      if (!origin || configuredOrigins.includes(origin) || isAllowedDevelopmentOrigin) {
-        callback(null, true);
-        return;
-      }
-      callback(new Error("Origin is not allowed by CORS"));
-    },
-    credentials: true,
-  }),
-);
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use("/api/track", trackingRouter);
-app.use(
-  "/uploads",
-  express.static(UPLOADS_DIR, {
-    maxAge: "1y",
-    immutable: true,
-    setHeaders: (res) => {
-      res.setHeader("X-Content-Type-Options", "nosniff");
-    },
-  }),
-);
+  mkdirSync(UPLOADS_DIR, { recursive: true });
 
-// Health check
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
-});
+  // ── Middleware ─────────────────────────────────────────────────────────
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        const isAllowedDev =
+          isDevelopment &&
+          !!origin &&
+          /^http:\/\/(localhost|127\.0\.0\.1):51(7[3-9]|80)$/.test(origin);
+        if (!origin || configuredOrigins.includes(origin) || isAllowedDev) {
+          callback(null, true);
+          return;
+        }
+        callback(new Error("Origin is not allowed by CORS"));
+      },
+      credentials: true,
+    }),
+  );
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+  app.use("/api/track", trackingRouter);
+  app.use("/api/settings", settingsRouter);
+  app.use(
+    "/uploads",
+    express.static(UPLOADS_DIR, {
+      maxAge: "1y",
+      immutable: true,
+      setHeaders: (res) => {
+        res.setHeader("X-Content-Type-Options", "nosniff");
+      },
+    }),
+  );
 
-// API Routes
-app.use("/api/auth", authRouter);
-app.use("/api/products", productsRouter);
-app.use("/api/categories", categoriesRouter);
-app.use("/api/occasions", occasionsRouter);
-app.use("/api/cart", cartRouter);
-app.use("/api/wishlist", wishlistRouter);
-app.use("/api/orders", ordersRouter);
-app.use("/api/admin", adminRouter);
+  // ── Health check ───────────────────────────────────────────────────────
+  app.get("/health", (_req, res) => {
+    res.json({ status: "ok", driver: DB_DRIVER, timestamp: new Date().toISOString() });
+  });
 
-// Error handling
-app.use(notFoundHandler);
-app.use(errorHandler);
+  const { authRouterMySQL }       = await import("./routes/auth-mysql.js");
+  const { productsRouterMySQL }   = await import("./routes/products-mysql.js");
+  const { categoriesRouterMySQL, occasionsRouterMySQL,
+          wishlistRouterMySQL, carouselRouterMySQL } = await import("./routes/simple-mysql.js");
+  const { cartRouterMySQL }       = await import("./routes/cart-mysql.js");
+  const { ordersRouterMySQL }     = await import("./routes/orders-mysql.js");
+  const { adminRouterMySQL }      = await import("./routes/admin-mysql.js");
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/health`);
-  console.log(`🗄️ Database: ${DB_PATH}`);
-  console.log(`📁 Uploads: ${UPLOADS_DIR}`);
+  app.use("/api/auth",       authRouterMySQL);
+  app.use("/api/products",   productsRouterMySQL);
+  app.use("/api/categories", categoriesRouterMySQL);
+  app.use("/api/occasions",  occasionsRouterMySQL);
+  app.use("/api/carousel",   carouselRouterMySQL);
+  app.use("/api/cart",       cartRouterMySQL);
+  app.use("/api/wishlist",   wishlistRouterMySQL);
+  app.use("/api/orders",     ordersRouterMySQL);
+  app.use("/api/admin",      adminRouterMySQL);
+
+  // ── Error handling ─────────────────────────────────────────────────────
+  app.use(notFoundHandler);
+  app.use(errorHandler);
+
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`📊 Health check: http://localhost:${PORT}/health`);
+    console.log(`📁 Uploads: ${UPLOADS_DIR}`);
+  });
+}
+
+bootstrap().catch((err) => {
+  console.error("💥 Failed to start server:", err);
+  process.exit(1);
 });

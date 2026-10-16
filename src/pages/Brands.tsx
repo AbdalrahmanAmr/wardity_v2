@@ -68,7 +68,7 @@ export const Brands: FC = () => {
         {products && products.filter((p) => p.brandLogo).length > 0 && (
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Featured Brand Products</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 md:gap-6">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-4">
               {products
                 .filter((p) => p.brandLogo)
                 .slice(0, 12)
@@ -82,4 +82,3 @@ export const Brands: FC = () => {
     </div>
   );
 };
-

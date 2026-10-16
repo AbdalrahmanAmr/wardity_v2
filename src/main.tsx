@@ -14,16 +14,20 @@ import {
 } from "@/contexts";
 import { queryClient } from "./services/queryClient";
 import { router } from "./router";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import "./index.css";
 
 // Initialize dark mode before React renders to prevent flash
-const theme = localStorage.getItem("wardity-theme") || "light";
-if (theme === "dark") {
+let storedTheme: string | null = null;
+try { storedTheme = localStorage.getItem("wardity-theme"); } catch { /* Use the operating-system preference when storage is unavailable. */ }
+const themeValue = storedTheme ? (() => { try { return JSON.parse(storedTheme); } catch { return storedTheme; } })() : "system";
+const theme = themeValue === "dark" || themeValue === "light" || themeValue === "system" ? themeValue : "system";
+const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+if (theme === "dark" || (theme === "system" && systemDark)) {
   document.documentElement.classList.add("dark");
 } else {
   document.documentElement.classList.remove("dark");
 }
-
 const rootElement = document.getElementById("root");
 if (!rootElement) {
   throw new Error("Root element not found");
@@ -33,7 +37,7 @@ createRoot(rootElement).render(
   <StrictMode>
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <LanguageProvider>
+        <ThemeProvider><LanguageProvider>
           <DeliveryLocationProvider>
             <AuthProvider>
               <CartProvider>
@@ -46,7 +50,7 @@ createRoot(rootElement).render(
               </CartProvider>
             </AuthProvider>
           </DeliveryLocationProvider>
-        </LanguageProvider>
+        </LanguageProvider></ThemeProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   </StrictMode>

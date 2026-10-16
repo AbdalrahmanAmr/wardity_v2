@@ -14,7 +14,7 @@ const statusColor = (status: string) => status === "delivered" ? "text-success b
 
 export const Orders: FC = () => {
   const { isAuthenticated } = useAuth();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const navigate = useNavigate();
   const query = useOrders(isAuthenticated);
 
@@ -29,7 +29,7 @@ export const Orders: FC = () => {
 
   return <div className="min-h-screen bg-wardity-bg py-12" dir={language === "ar" ? "rtl" : "ltr"}>
     <div className="container mx-auto px-4">
-      <h1 className="mb-8 text-3xl font-bold text-gray-900">{language === "ar" ? "طلباتي" : "My Orders"}</h1>
+      <h1 className="mb-8 text-3xl font-bold text-gray-900">{t("orders")}</h1>
       {orders.length === 0 ? <div className="rounded-xl bg-white p-12 text-center"><TruckIcon className="mx-auto mb-4 h-24 w-24 text-gray-300" /><h2 className="text-2xl font-bold text-gray-900">{language === "ar" ? "لا توجد طلبات بعد" : "No orders yet"}</h2><p className="mb-6 text-gray-600">{language === "ar" ? "ابدأ التسوق لرؤية طلباتك هنا" : "Start shopping to see your orders here"}</p><Link to="/" className="inline-block rounded-lg bg-primary px-8 py-3 font-semibold text-white">{language === "ar" ? "ابدأ التسوق" : "Start Shopping"}</Link></div> :
         <div className="space-y-4">{orders.map((order) => <div key={order.id} className="rounded-xl bg-white p-6 shadow-sm">
           <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-center"><div><div className="mb-2 flex items-center gap-3"><h2 className="text-lg font-bold text-gray-900">#{order.id}</h2><span className={`rounded-full px-3 py-1 text-sm font-medium ${statusColor(order.status)}`}>{statusLabel(order.status, language === "ar")}</span></div><p className="text-sm text-gray-600">{formatDate(order.createdAt)}</p></div><div className="text-right"><p className="text-2xl font-bold text-primary">{formatCurrency(order.total)}</p><Link to={`/orders/${encodeURIComponent(order.id)}`} className="text-sm text-primary hover:underline">{language === "ar" ? "عرض التفاصيل" : "View Details"}</Link></div></div>

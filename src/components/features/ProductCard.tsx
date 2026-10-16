@@ -24,6 +24,7 @@ export const ProductCard: FC<ProductCardProps> = ({
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { language } = useLanguage();
+  const displayName = language === "ar" ? product.nameAr || <span lang="en" dir="ltr">{product.name}</span> : product.name;
 
   const isWishlisted = isWishlistedProp ?? isInWishlist(product.id);
   const isOutOfStock = product.status === "Out of stock" || product.stockQuantity === 0;
@@ -80,7 +81,7 @@ export const ProductCard: FC<ProductCardProps> = ({
         {/* Wishlist Button */}
         <button
           onClick={handleToggleWishlist}
-          className="absolute top-3 right-3 w-9 h-9 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm hover:bg-white dark:hover:bg-gray-800 hover:scale-110 transition-all z-20"
+          className="absolute right-3 top-3 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 shadow-sm backdrop-blur-sm transition-all hover:scale-110 hover:bg-white dark:bg-gray-800/90 dark:hover:bg-gray-800"
           aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
         >
           {isWishlisted ? (
@@ -94,7 +95,7 @@ export const ProductCard: FC<ProductCardProps> = ({
         <button
           onClick={handleAddToCart}
           disabled={isOutOfStock}
-          className="absolute bottom-3 right-3 w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:bg-primary-600 z-20 disabled:pointer-events-none disabled:opacity-0"
+          className="absolute bottom-3 right-3 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-primary text-white opacity-0 shadow-lg transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 hover:bg-primary-600 disabled:pointer-events-none disabled:opacity-0 sm:h-11 sm:w-11"
           aria-label="Add to cart"
         >
           <ShoppingBagIcon className="w-5 h-5" />
@@ -109,14 +110,14 @@ export const ProductCard: FC<ProductCardProps> = ({
       </div>
 
       {/* Content */}
-      <div className="p-4">
+      <div className="min-w-0 p-3 sm:p-4">
         <h3 className="text-sm font-medium text-gray-800 dark:text-gray-200 line-clamp-2 min-h-[40px] group-hover:text-primary transition-colors">
-          {product.name}
+          <span dir="auto">{displayName}</span>
         </h3>
         <div className="mt-2 flex items-center justify-between">
-          <p className="text-lg font-bold text-primary">
-            {product.isOnSale && <span className="mr-2 text-sm text-gray-400 line-through">{product.price.toLocaleString()}</span>}
-            {displayPrice.toLocaleString()} <span className="text-sm font-normal">EGP</span>
+          <p className="min-w-0 text-base font-bold text-primary sm:text-lg">
+            {product.isOnSale && <span className="mr-1 text-xs text-gray-400 line-through sm:mr-2 sm:text-sm">{product.price.toLocaleString()}</span>}
+            <span className="whitespace-nowrap">{displayPrice.toLocaleString()} <span className="text-xs font-normal sm:text-sm">EGP</span></span>
           </p>
         </div>
       </div>
