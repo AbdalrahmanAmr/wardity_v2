@@ -17,9 +17,9 @@ export function authenticateToken(
   next: NextFunction
 ): void {
   const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
+  const [scheme, token] = authHeader?.split(" ") ?? [];
 
-  if (!token) {
+  if (scheme !== "Bearer" || !token) {
     res.status(401).json({
       message: "Authentication required",
       status: 401,
@@ -42,7 +42,7 @@ export function authenticateToken(
       role: decoded.role,
     };
     next();
-  } catch (error) {
+  } catch {
     res.status(403).json({
       message: "Invalid or expired token",
       status: 403,

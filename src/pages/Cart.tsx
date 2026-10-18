@@ -22,9 +22,13 @@ export const Cart: FC = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto text-center py-16">
             <ShoppingBagIcon className="w-24 h-24 text-gray-300 mx-auto mb-6" />
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">{t("emptyCart")}</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">
+              {t("emptyCart")}
+            </h1>
             <p className="text-gray-600 mb-8">
-              {language === "ar" ? "لم تضف أي منتجات إلى سلتك بعد." : "Looks like you haven't added anything to your cart yet."}
+              {language === "ar"
+                ? "لم تضف أي منتجات إلى سلتك بعد."
+                : "Looks like you haven't added anything to your cart yet."}
             </p>
             <Link
               to="/"
@@ -85,11 +89,22 @@ export const Cart: FC = () => {
                       </h3>
                     </Link>
                     {item.selectedSize && (
-                      <p className="text-sm text-gray-500 mb-2">Size: {item.selectedSize}</p>
+                      <p className="text-sm text-gray-500 mb-2">
+                        Size: {item.selectedSize}
+                      </p>
                     )}
-                    {item.product.status === "Out of stock" && <p className="text-sm font-semibold text-red-600">{language === "ar" ? "غير متوفر - احذف هذا المنتج للمتابعة" : "Out of stock - remove this item to continue"}</p>}
+                    {item.product.status === "Out of stock" && (
+                      <p className="text-sm font-semibold text-red-600">
+                        {language === "ar"
+                          ? "غير متوفر - احذف هذا المنتج للمتابعة"
+                          : "Out of stock - remove this item to continue"}
+                      </p>
+                    )}
                     <p className="text-xl font-bold text-primary">
-                      {formatCurrency((item.product.salePrice ?? item.product.price) * item.quantity)}
+                      {formatCurrency(
+                        (item.product.salePrice ?? item.product.price) *
+                          item.quantity,
+                      )}
                     </p>
                   </div>
 
@@ -97,7 +112,9 @@ export const Cart: FC = () => {
                   <div className="ms-auto flex w-full items-center justify-between gap-3 sm:w-auto sm:flex-col sm:items-end sm:justify-start sm:gap-4">
                     <div className="flex items-center rounded-lg border border-gray-200">
                       <button
-                        onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                        onClick={() =>
+                          updateQuantity(item.product.id, item.quantity - 1)
+                        }
                         disabled={item.product.status === "Out of stock"}
                         className="min-h-11 min-w-11 p-2 text-gray-600 hover:bg-gray-50 transition-colors"
                         aria-label="Decrease quantity"
@@ -108,7 +125,9 @@ export const Cart: FC = () => {
                         {item.quantity}
                       </span>
                       <button
-                        onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                        onClick={() =>
+                          updateQuantity(item.product.id, item.quantity + 1)
+                        }
                         disabled={item.product.status === "Out of stock"}
                         className="min-h-11 min-w-11 p-2 text-gray-600 hover:bg-gray-50 transition-colors"
                         aria-label="Increase quantity"
@@ -141,18 +160,14 @@ export const Cart: FC = () => {
           {/* Order Summary */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl p-6 shadow-sm sticky top-24">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Order Summary</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-6">
+                Order Summary
+              </h2>
 
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
                   <span>{formatCurrency(cart.total)}</span>
-                </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Shipping</span>
-                  <span className={cart.total >= 500 ? "text-success" : ""}>
-                    {cart.total >= 500 ? "Free" : "50 EGP"}
-                  </span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>VAT</span>
@@ -162,23 +177,30 @@ export const Cart: FC = () => {
                   <div className="flex justify-between text-xl font-bold text-gray-900">
                     <span>Total</span>
                     <span className="text-primary">
-                      {formatCurrency(cart.total + (cart.total >= 500 ? 0 : 50))}
+                      {formatCurrency(cart.total)}
                     </span>
                   </div>
                 </div>
               </div>
 
-              {cart.total < 500 && (
+              <p className="mb-6 text-xs text-gray-500">
+                Delivery fee is calculated at checkout based on your location.
+              </p>
+
+              {cart.total < 2000 && (
                 <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 mb-6">
                   <p className="text-sm text-primary">
-                    Add {formatCurrency(500 - cart.total)} more for free shipping!
+                    Add {formatCurrency(2000 - cart.total)} more for free
+                    delivery.
                   </p>
                 </div>
               )}
 
               <button
                 onClick={() => navigate("/checkout")}
-                disabled={cart.items.some((item) => item.product.status === "Out of stock")}
+                disabled={cart.items.some(
+                  (item) => item.product.status === "Out of stock",
+                )}
                 className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-600 transition-colors mb-4 disabled:cursor-not-allowed disabled:bg-gray-400"
               >
                 Proceed to Checkout

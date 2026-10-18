@@ -1,6 +1,6 @@
 import { FC, useState } from "react";
 import {
-  EnvelopeIcon,
+  ChatBubbleLeftRightIcon,
   PhoneIcon,
   MapPinIcon,
   ClockIcon,
@@ -82,11 +82,14 @@ export const Contact: FC = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Address</h3>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      Cairo, Egypt
-                      <br />
-                      Giza, Egypt
-                    </p>
+                    <a
+                      href="https://maps.app.goo.gl/3sweYTreLZXoWwph8"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                    >
+                      View our location on Google Maps
+                    </a>
                   </div>
                 </div>
 
@@ -97,28 +100,60 @@ export const Contact: FC = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Phone</h3>
-                    <a
-                      href="tel:+201234567890"
-                      className="text-primary hover:underline text-gray-600 dark:text-gray-400"
-                    >
-                      +20 123 456 7890
-                    </a>
+                    <ul className="space-y-1">
+                      <li>
+                        <a
+                          href="tel:+201100374039"
+                          className="text-primary hover:underline"
+                          dir="ltr"
+                        >
+                          01100374039
+                        </a>
+                      </li>
+                      <li>
+                        <a
+                          href="tel:+201007906629"
+                          className="text-primary hover:underline"
+                          dir="ltr"
+                        >
+                          01007906629
+                        </a>
+                      </li>
+                    </ul>
                   </div>
                 </div>
 
-                {/* Email */}
+                {/* WhatsApp */}
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                    <EnvelopeIcon className="w-6 h-6 text-primary" />
+                    <ChatBubbleLeftRightIcon className="w-6 h-6 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Email</h3>
-                    <a
-                      href="mailto:info@wardity.com"
-                      className="text-primary hover:underline text-gray-600 dark:text-gray-400"
-                    >
-                      info@wardity.com
-                    </a>
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">WhatsApp</h3>
+                    <ul className="space-y-1">
+                      <li>
+                        <a
+                          href="https://wa.me/201100374039"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                          dir="ltr"
+                        >
+                          01100374039
+                        </a>
+                      </li>
+                      <li>
+                        <a
+                          href="https://wa.me/201007906629"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                          dir="ltr"
+                        >
+                          01007906629
+                        </a>
+                      </li>
+                    </ul>
                   </div>
                 </div>
 
@@ -132,19 +167,41 @@ export const Contact: FC = () => {
                       Business Hours
                     </h3>
                     <p className="text-gray-600 dark:text-gray-400">
-                      Sunday - Thursday: 9:00 AM - 10:00 PM
-                      <br />
-                      Friday - Saturday: 10:00 AM - 11:00 PM
+                      Every day: 9:00 AM - 1:00 AM
                     </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Map Placeholder */}
-            <div className="bg-gray-200 dark:bg-gray-800 rounded-lg overflow-hidden h-64 flex items-center justify-center">
-              <p className="text-gray-500 dark:text-gray-400">Map Location</p>
-            </div>
+            <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+              <iframe
+                title="Wardity location on Google Maps"
+                src="https://maps.google.com/maps?q=30.0385519%2C31.37842&z=15&output=embed"
+                className="block h-64 w-full border-0"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                allowFullScreen
+              />
+              <div className="flex items-center justify-between gap-4 px-5 py-4">
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                    Find us
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Wardity, Cairo
+                  </p>
+                </div>
+                <a
+                  href="https://maps.app.goo.gl/3sweYTreLZXoWwph8"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-600"
+                >
+                  Open in Maps
+                </a>
+              </div>
+            </section>
           </div>
 
           {/* Contact Form */}
@@ -277,4 +334,3 @@ export const Contact: FC = () => {
     </div>
   );
 };
-

@@ -18,6 +18,7 @@ export const AdminLayout: FC = () => {
     { name: t.dashboard, path: "/admin" },
     { name: t.products, path: "/admin/products" },
     { name: t.orders, path: "/admin/orders" },
+    { name: t.deliveryLocations, path: "/admin/delivery-locations" },
     { name: t.categories, path: "/admin/categories" },
     { name: t.occasions, path: "/admin/occasions" },
     { name: t.carousel, path: "/admin/carousel" },

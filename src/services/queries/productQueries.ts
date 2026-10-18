@@ -15,8 +15,18 @@ export const productQueryKeys = {
     [...productQueryKeys.lists(), filters] as const,
   details: () => [...productQueryKeys.all, "detail"] as const,
   detail: (id: string) => [...productQueryKeys.details(), id] as const,
-  search: (query: string) => [...productQueryKeys.all, "search", query] as const,
+  search: (query: string, filters: ProductSearchFilters) =>
+    [...productQueryKeys.all, "search", query, filters] as const,
 };
+
+export interface ProductSearchFilters {
+  categoryId?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  availability?: "in-stock" | "out-of-stock";
+  onSale?: boolean;
+  sortBy?: "relevance" | "price-asc" | "price-desc" | "newest";
+}
 
 /**
  * Fetch single product by ID
@@ -46,12 +56,19 @@ export function useProducts(filters?: Record<string, unknown>) {
                 }
                 return acc;
               },
-              {} as Record<string, string>
-            )
+              {} as Record<string, string>,
+            ),
           ).toString()}`
         : "";
-      const res = await api.get<Product[] | { data: Product[] }>(`/products${queryString}`);
-      if (res && typeof res === "object" && "data" in res && Array.isArray((res as { data: Product[] }).data)) {
+      const res = await api.get<Product[] | { data: Product[] }>(
+        `/products${queryString}`,
+      );
+      if (
+        res &&
+        typeof res === "object" &&
+        "data" in res &&
+        Array.isArray((res as { data: Product[] }).data)
+      ) {
         return (res as { data: Product[] }).data;
       }
       return Array.isArray(res) ? res : [];
@@ -68,7 +85,7 @@ export function useProductsInfinite(pageSize = 20) {
     queryKey: [...productQueryKeys.all, "infinite", pageSize],
     queryFn: ({ pageParam = 1 }) =>
       api.get<PaginatedResponse<Product>>(
-        `/products?page=${pageParam}&pageSize=${pageSize}`
+        `/products?page=${pageParam}&pageSize=${pageSize}`,
       ),
     getNextPageParam: (lastPage) => {
       if (lastPage.page < lastPage.totalPages) {
@@ -84,12 +101,33 @@ export function useProductsInfinite(pageSize = 20) {
 /**
  * Search products
  */
-export function useSearchProducts(query: string) {
+export function useSearchProducts(
+  query: string,
+  filters: ProductSearchFilters = {},
+) {
+  const hasFilters = Boolean(
+    filters.categoryId ||
+    filters.minPrice ||
+    filters.maxPrice ||
+    filters.availability ||
+    filters.onSale,
+  );
+
   return useQuery({
-    queryKey: productQueryKeys.search(query),
-    queryFn: () => api.get<Product[]>(`/products/search?q=${encodeURIComponent(query)}`),
-    enabled: query.length > 2,
+    queryKey: productQueryKeys.search(query, filters),
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (query) params.set("q", query);
+      if (filters.categoryId) params.set("categoryId", filters.categoryId);
+      if (filters.minPrice) params.set("minPrice", filters.minPrice);
+      if (filters.maxPrice) params.set("maxPrice", filters.maxPrice);
+      if (filters.availability)
+        params.set("availability", filters.availability);
+      if (filters.onSale) params.set("onSale", "true");
+      if (filters.sortBy) params.set("sortBy", filters.sortBy);
+      return api.get<Product[]>(`/products/search?${params.toString()}`);
+    },
+    enabled: query.length >= 2 || hasFilters,
     staleTime: 2 * 60 * 1000, // 2 minutes for search results
   });
 }
-

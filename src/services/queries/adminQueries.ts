@@ -17,7 +17,14 @@ export interface AdminOrder {
   id: string;
   user_id: string;
   status: string;
-  total: number;
+  total: number | string | null;
+  merchandise_subtotal?: number | string | null;
+  delivery_location_name?: string | null;
+  delivery_location_name_ar?: string | null;
+  delivery_fee?: number | string | null;
+  requested_delivery_date?: string | null;
+  requested_delivery_time?: string | null;
+  requires_shipping_quote?: boolean | number;
   shipping_address: string;
   payment_method: string;
   created_at: string;
@@ -73,6 +80,14 @@ export function useUpdateOrder() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminQueryKeys.orders() });
     },
+  });
+}
+
+export function useResolveShippingQuote() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, deliveryFee }: { id: string; deliveryFee: number }) => api.patch(`/admin/orders/${id}/shipping-quote`, { deliveryFee }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: adminQueryKeys.orders() }); },
   });
 }
 

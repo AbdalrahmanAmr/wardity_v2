@@ -2,7 +2,7 @@ export const adminEn = {
   settings: "Settings", contactSettings: "Contact methods", contactSettingsIntro: "Edit the contact values and choose separately which valid methods appear publicly.",
   contactPhone: "Phone", contactEmail: "Email", contactWhatsapp: "WhatsApp", contactTelegram: "Telegram", contactValue: "Contact value", showPublicly: "Show on storefront", saveSettings: "Save contact settings", settingsSaved: "Contact settings saved.",
   phoneHint: "Keep the supplied display number as-is. Add a country code only if needed for international dialing.", emailHint: "A public contact email; email sending is not configured in this project.", whatsappHint: "Enter a phone number. The public link strips spaces and punctuation; use an international country code for wa.me.", telegramHint: "Enter a public Telegram username or https://t.me/username. Never enter a bot token here.", contactRequired: "Enter a value before enabling this contact method.",
-  dashboard: "Dashboard", products: "Products", orders: "Orders", categories: "Categories", occasions: "Occasions", users: "Users",
+  dashboard: "Dashboard", products: "Products", orders: "Orders", categories: "Categories", occasions: "Occasions", users: "Users", deliveryLocations: "Delivery locations",
   backToStore: "Back to Store", language: "العربية", theme: "Theme", light: "Light", dark: "Dark", system: "System",
   totalProducts: "Total Products", totalOrders: "Total Orders", totalUsers: "Total Users",
   addProduct: "Add Product", addCategory: "Add Category", addOccasion: "Add Occasion", editProduct: "Edit Product", newProduct: "New Product",

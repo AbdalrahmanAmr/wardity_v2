@@ -24,11 +24,20 @@ export const ProductCard: FC<ProductCardProps> = ({
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { language } = useLanguage();
-  const displayName = language === "ar" ? product.nameAr || <span lang="en" dir="ltr">{product.name}</span> : product.name;
+  const displayName =
+    language === "ar"
+      ? product.nameAr || (
+          <span lang="en" dir="ltr">
+            {product.name}
+          </span>
+        )
+      : product.name;
 
   const isWishlisted = isWishlistedProp ?? isInWishlist(product.id);
-  const isOutOfStock = product.status === "Out of stock" || product.stockQuantity === 0;
-  const displayPrice = product.isOnSale && product.salePrice ? product.salePrice : product.price;
+  const isOutOfStock =
+    product.status === "Out of stock" || product.stockQuantity === 0;
+  const displayPrice =
+    product.isOnSale && product.salePrice ? product.salePrice : product.price;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -38,7 +47,15 @@ export const ProductCard: FC<ProductCardProps> = ({
     } else {
       addToCart(product);
     }
-    trackAddToCart({ id: product.id, name: product.name, price: product.isOnSale && product.salePrice ? product.salePrice : product.price, quantity: 1 });
+    trackAddToCart({
+      id: product.id,
+      name: product.name,
+      price:
+        product.isOnSale && product.salePrice
+          ? product.salePrice
+          : product.price,
+      quantity: 1,
+    });
   };
 
   const handleToggleWishlist = (e: React.MouseEvent) => {
@@ -49,7 +66,15 @@ export const ProductCard: FC<ProductCardProps> = ({
     } else {
       toggleWishlist(product);
     }
-    if (!isWishlisted) trackAddToWishlist({ id: product.id, name: product.name, price: product.isOnSale && product.salePrice ? product.salePrice : product.price });
+    if (!isWishlisted)
+      trackAddToWishlist({
+        id: product.id,
+        name: product.name,
+        price:
+          product.isOnSale && product.salePrice
+            ? product.salePrice
+            : product.price,
+      });
   };
 
   // Ensure product has a valid ID
@@ -66,8 +91,15 @@ export const ProductCard: FC<ProductCardProps> = ({
       {/* Image Container */}
       <div className="relative aspect-square overflow-hidden bg-gray-50 dark:bg-gray-700">
         <img
-          src={product.image || `https://placehold.co/400x400/FFF0F3/D02046?text=${encodeURIComponent(product.name.slice(0, 10))}`}
+          src={
+            product.image ||
+            `https://placehold.co/400x400/FFF0F3/D02046?text=${encodeURIComponent(product.name.slice(0, 10))}`
+          }
           alt={product.name}
+          width={400}
+          height={400}
+          loading="lazy"
+          decoding="async"
           className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${isOutOfStock ? "grayscale opacity-60" : ""}`}
         />
 
@@ -75,8 +107,16 @@ export const ProductCard: FC<ProductCardProps> = ({
         {product.badge && (
           <span className="badge-new z-10">{product.badge}</span>
         )}
-        {product.isOnSale && <span className="absolute top-3 left-3 z-10 rounded-full bg-red-600 px-2 py-1 text-xs font-bold text-white">-{product.discountPercent}%</span>}
-        {isOutOfStock && <span className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 text-sm font-bold text-white">{language === "ar" ? "غير متوفر" : "Out of stock"}</span>}
+        {product.isOnSale && (
+          <span className="absolute top-3 left-3 z-10 rounded-full bg-red-600 px-2 py-1 text-xs font-bold text-white">
+            -{product.discountPercent}%
+          </span>
+        )}
+        {isOutOfStock && (
+          <span className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 text-sm font-bold text-white">
+            {language === "ar" ? "غير متوفر" : "Out of stock"}
+          </span>
+        )}
 
         {/* Wishlist Button */}
         <button
@@ -95,7 +135,7 @@ export const ProductCard: FC<ProductCardProps> = ({
         <button
           onClick={handleAddToCart}
           disabled={isOutOfStock}
-          className="absolute bottom-3 right-3 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-primary text-white opacity-0 shadow-lg transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 hover:bg-primary-600 disabled:pointer-events-none disabled:opacity-0 sm:h-11 sm:w-11"
+          className="absolute bottom-3 right-3 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-primary text-white opacity-0 shadow-lg transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 hover:bg-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary disabled:pointer-events-none disabled:opacity-0 sm:h-11 sm:w-11"
           aria-label="Add to cart"
         >
           <ShoppingBagIcon className="w-5 h-5" />
@@ -116,8 +156,15 @@ export const ProductCard: FC<ProductCardProps> = ({
         </h3>
         <div className="mt-2 flex items-center justify-between">
           <p className="min-w-0 text-base font-bold text-primary sm:text-lg">
-            {product.isOnSale && <span className="mr-1 text-xs text-gray-400 line-through sm:mr-2 sm:text-sm">{product.price.toLocaleString()}</span>}
-            <span className="whitespace-nowrap">{displayPrice.toLocaleString()} <span className="text-xs font-normal sm:text-sm">EGP</span></span>
+            {product.isOnSale && (
+              <span className="mr-1 text-xs text-gray-400 line-through sm:mr-2 sm:text-sm">
+                {product.price.toLocaleString()}
+              </span>
+            )}
+            <span className="whitespace-nowrap">
+              {displayPrice.toLocaleString()}{" "}
+              <span className="text-xs font-normal sm:text-sm">EGP</span>
+            </span>
           </p>
         </div>
       </div>

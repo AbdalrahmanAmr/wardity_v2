@@ -218,6 +218,14 @@ export async function initializeDatabaseMySQL(): Promise<void> {
   `);
   await addColumnIfMissing("users", "role", "VARCHAR(50) NOT NULL DEFAULT 'customer'");
 
+  // ── newsletter_subscribers ────────────────────────────────────────────
+  await dbExec(`
+    CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+      email         VARCHAR(254) NOT NULL PRIMARY KEY,
+      subscribed_at DATETIME     NOT NULL DEFAULT NOW()
+    ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+  `);
+
   // ── categories ────────────────────────────────────────────────────────
   await dbExec(`
     CREATE TABLE IF NOT EXISTS categories (
@@ -350,6 +358,49 @@ export async function initializeDatabaseMySQL(): Promise<void> {
     ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
   `);
   await addColumnIfMissing("orders", "event_id", "VARCHAR(255)");
+  await addColumnIfMissing("orders", "merchandise_subtotal", "DECIMAL(10,2)");
+  await addColumnIfMissing("orders", "delivery_location_id", "VARCHAR(36)");
+  await addColumnIfMissing("orders", "delivery_location_name", "VARCHAR(255)");
+  await addColumnIfMissing("orders", "delivery_location_name_ar", "VARCHAR(255)");
+  await addColumnIfMissing("orders", "delivery_fee", "DECIMAL(10,2)");
+  await addColumnIfMissing("orders", "requested_delivery_date", "DATE");
+  await addColumnIfMissing("orders", "requested_delivery_time", "VARCHAR(20)");
+  await addColumnIfMissing("orders", "requires_shipping_quote", "TINYINT NOT NULL DEFAULT 0");
+  const totalColumn = await dbGet<{ nullable: string }>(
+    "SELECT IS_NULLABLE AS nullable FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'orders' AND COLUMN_NAME = 'total'",
+    [process.env.MYSQL_DATABASE!],
+  );
+  if (totalColumn?.nullable === "NO") await dbExec("ALTER TABLE orders MODIFY total DECIMAL(10,2) NULL");
+
+  // ── delivery_locations ───────────────────────────────────────────────
+  await dbExec(`
+    CREATE TABLE IF NOT EXISTS delivery_locations (
+      id VARCHAR(36) NOT NULL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL UNIQUE,
+      name_ar VARCHAR(255) NOT NULL,
+      delivery_fee DECIMAL(10,2) NULL,
+      requires_quote TINYINT NOT NULL DEFAULT 0,
+      is_active TINYINT NOT NULL DEFAULT 1,
+      created_at DATETIME NOT NULL DEFAULT NOW(),
+      updated_at DATETIME NOT NULL DEFAULT NOW()
+    ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+  `);
+  const initialDeliveryLocations = [
+    ["delivery-el-waha", "El Waha", "الواحة", 0],
+    ["delivery-nasr-city", "Nasr City", "مدينة نصر", 0],
+    ["delivery-first-settlement", "First Settlement", "التجمع الأول", 0],
+    ["delivery-fifth-settlement", "Fifth Settlement", "التجمع الخامس", 0],
+    ["delivery-asher", "Asher", "العاشر", 0],
+    ["delivery-maadi", "Maadi", "المعادي", 0],
+    ["delivery-sheraton", "Sheraton", "شيراتون", 0],
+    ["delivery-other", "Other", "منطقة أخرى / تواصل مع المدير", 1],
+  ] as const;
+  for (const [id, name, nameAr, requiresQuote] of initialDeliveryLocations) {
+    await dbRun(
+      "INSERT IGNORE INTO delivery_locations (id, name, name_ar, requires_quote, is_active) VALUES (?, ?, ?, ?, 1)",
+      [id, name, nameAr, requiresQuote],
+    );
+  }
 
   // ── order_items ───────────────────────────────────────────────────────
   await dbExec(`

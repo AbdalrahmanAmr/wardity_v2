@@ -8,12 +8,14 @@ export interface TokenPayload {
 }
 
 export function generateToken(payload: TokenPayload): string {
-  const secret = process.env.JWT_SECRET || "fallback-secret-change-in-production";
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error("JWT_SECRET is not configured");
   const expiresIn = process.env.JWT_EXPIRES_IN || "7d";
-  return jwt.sign(payload, secret, { expiresIn: expiresIn as any });
+  return jwt.sign(payload, secret, { expiresIn: expiresIn as jwt.SignOptions["expiresIn"] });
 }
 
 export function verifyToken(token: string): TokenPayload {
-  const secret = process.env.JWT_SECRET || "fallback-secret-change-in-production";
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error("JWT_SECRET is not configured");
   return jwt.verify(token, secret) as TokenPayload;
 }

@@ -19,11 +19,7 @@ export const ROUTES = {
   BEST_SELLERS: "/best-sellers",
   CART: "/cart",
   CONTACT: "/contact",
-  FAQS: "/faqs",
-  DELIVERY: "/delivery",
-  TRACK_ORDER: "/track-order",
   ABOUT: "/about",
   PRIVACY: "/privacy",
   TERMS: "/terms",
 } as const;
-

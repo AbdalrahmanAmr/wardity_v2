@@ -1,4 +1,4 @@
-import { FC, useState } from "react";
+import { FC, useEffect, useMemo, useState } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBlock } from "@/components/ui/ErrorBlock";
@@ -9,6 +9,34 @@ import { api } from "@/services/api";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { trackInitiateCheckout, trackPurchase } from "@/lib/tracking";
 import { useConsent } from "@/contexts/ConsentContext";
+import { useDeliveryLocations } from "@/services/queries/deliveryLocationQueries";
+
+function cairoDate(): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Africa/Cairo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const item = (type: string) =>
+    parts.find((part) => part.type === type)?.value;
+  return `${item("year")}-${item("month")}-${item("day")}`;
+}
+const timeOptions = Array.from({ length: 31 }, (_, index) => {
+  const minutes = (10 * 60 + index * 30) % (24 * 60);
+  const hour = Math.floor(minutes / 60);
+  const minute = minutes % 60;
+  const value = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+  const suffix = hour <= 1 ? " (after midnight)" : "";
+  return {
+    value,
+    label:
+      new Intl.DateTimeFormat("en", {
+        hour: "numeric",
+        minute: "2-digit",
+      }).format(new Date(2000, 0, 1, hour, minute)) + suffix,
+  };
+});
 
 export const Checkout: FC = () => {
   const { cart, clearCart } = useCart();
@@ -17,6 +45,7 @@ export const Checkout: FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { choice } = useConsent();
+  const locationsQuery = useDeliveryLocations();
 
   const [formData, setFormData] = useState({
     firstName: user?.name.split(" ")[0] || "",
@@ -24,20 +53,50 @@ export const Checkout: FC = () => {
     email: user?.email || "",
     phone: "",
     address: "",
-    city: "Cairo",
+    deliveryLocationId: "",
     postalCode: "",
     deliveryDate: "",
     deliveryTime: "",
     notes: "",
   });
 
+  const today = cairoDate();
+  const location = locationsQuery.data?.find(
+    (item) => item.id === formData.deliveryLocationId,
+  );
+  useEffect(() => {
+    if (
+      formData.deliveryLocationId &&
+      !locationsQuery.data?.some(
+        (item) => item.id === formData.deliveryLocationId,
+      )
+    )
+      setFormData((current) => ({ ...current, deliveryLocationId: "" }));
+  }, [formData.deliveryLocationId, locationsQuery.data]);
+  const quoteRequired = Boolean(location?.requiresQuote);
+  const shippingCost = useMemo(
+    () =>
+      quoteRequired
+        ? null
+        : cart.total > 2000
+          ? 0
+          : (location?.deliveryFee ?? null),
+    [cart.total, location, quoteRequired],
+  );
+  const total =
+    shippingCost === null ? null : cart.total + Number(shippingCost);
+
   if (cart.items.length === 0) {
     return (
       <div className="min-h-screen bg-wardity-bg py-12">
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto text-center py-16">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">Your cart is empty</h1>
-            <p className="text-gray-600 mb-8">Add items to your cart before checkout</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">
+              Your cart is empty
+            </h1>
+            <p className="text-gray-600 mb-8">
+              Add items to your cart before checkout
+            </p>
             <Link
               to="/"
               className="inline-flex items-center gap-2 bg-primary text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary-600 transition-colors"
@@ -51,45 +110,101 @@ export const Checkout: FC = () => {
     );
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+      ...(name === "deliveryDate" && value === today
+        ? { deliveryTime: "" }
+        : {}),
+    }));
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>,
+  ): Promise<void> => {
     e.preventDefault();
     setError(null);
     setIsSubmitting(true);
 
     try {
-      const eventId = choice === "accepted" ? trackInitiateCheckout(cart.total, cart.items.map((item) => ({ id: item.product.id, price: item.product.salePrice ?? item.product.price, quantity: item.quantity }))) : undefined;
-      const order = await api.post<{ id: string; total: number; items: Array<{ product: { id: string }; quantity: number; price: number }> }>("/orders", {
-        shippingAddress: `${formData.address}, ${formData.city}, ${formData.postalCode}`,
+      const eventId =
+        choice === "accepted"
+          ? trackInitiateCheckout(
+              cart.total,
+              cart.items.map((item) => ({
+                id: item.product.id,
+                price: item.product.salePrice ?? item.product.price,
+                quantity: item.quantity,
+              })),
+            )
+          : undefined;
+      const order = await api.post<{
+        id: string;
+        total: number | null;
+        requiresShippingQuote?: boolean | number;
+        items: Array<{
+          product: { id: string };
+          quantity: number;
+          price: number;
+        }>;
+      }>("/orders", {
+        shippingAddress: `${formData.address}, ${location?.name || ""}, ${formData.postalCode}`,
+        customerName: `${formData.firstName} ${formData.lastName}`.trim(),
         paymentMethod: "cash_on_delivery",
         eventId,
         consent: choice === "accepted",
         email: formData.email,
         phone: formData.phone,
         sourceUrl: window.location.href,
+        deliveryLocationId: formData.deliveryLocationId,
+        requestedDeliveryDate: formData.deliveryDate,
+        requestedDeliveryTime:
+          formData.deliveryDate === today
+            ? null
+            : formData.deliveryTime || null,
       });
       clearCart();
-      if (choice === "accepted") trackPurchase(order.id, order.total, order.items.map((item) => ({ id: item.product.id, price: item.price, quantity: item.quantity })), eventId);
+      if (
+        choice === "accepted" &&
+        order.total !== null &&
+        !order.requiresShippingQuote
+      )
+        trackPurchase(
+          order.id,
+          order.total,
+          order.items.map((item) => ({
+            id: item.product.id,
+            price: item.price,
+            quantity: item.quantity,
+          })),
+          eventId,
+        );
       navigate(`/orders/${encodeURIComponent(order.id)}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to place order. Please try again.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to place order. Please try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const shippingCost = cart.total >= 500 ? 0 : 50;
-  const total = cart.total + shippingCost;
-
   return (
     <div className="min-h-screen bg-wardity-bg py-12">
       <div className="container mx-auto px-4">
         <div className="flex items-center gap-2 mb-8">
-          <Link to="/cart" className="text-gray-600 hover:text-primary transition-colors">
+          <Link
+            to="/cart"
+            className="text-gray-600 hover:text-primary transition-colors"
+          >
             <ArrowLeftIcon className="w-5 h-5" />
           </Link>
           <h1 className="text-3xl font-bold text-gray-900">Checkout</h1>
@@ -107,10 +222,15 @@ export const Checkout: FC = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Shipping Information */}
               <div className="bg-white rounded-xl p-6 shadow-sm">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Shipping Information</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-6">
+                  Shipping Information
+                </h2>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="firstName"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       First Name *
                     </label>
                     <input
@@ -124,7 +244,10 @@ export const Checkout: FC = () => {
                     />
                   </div>
                   <div>
-                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="lastName"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Last Name *
                     </label>
                     <input
@@ -139,7 +262,10 @@ export const Checkout: FC = () => {
                   </div>
                 </div>
                 <div className="mt-4">
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Email *
                   </label>
                   <input
@@ -153,7 +279,10 @@ export const Checkout: FC = () => {
                   />
                 </div>
                 <div className="mt-4">
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="phone"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Phone Number *
                   </label>
                   <input
@@ -167,7 +296,10 @@ export const Checkout: FC = () => {
                   />
                 </div>
                 <div className="mt-4">
-                  <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="address"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Address *
                   </label>
                   <textarea
@@ -182,24 +314,57 @@ export const Checkout: FC = () => {
                 </div>
                 <div className="grid md:grid-cols-2 gap-4 mt-4">
                   <div>
-                    <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
-                      City *
+                    <label
+                      htmlFor="deliveryLocationId"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Delivery location *
                     </label>
                     <select
-                      id="city"
-                      name="city"
-                      value={formData.city}
+                      id="deliveryLocationId"
+                      name="deliveryLocationId"
+                      value={formData.deliveryLocationId}
                       onChange={handleChange}
                       required
+                      disabled={
+                        locationsQuery.isLoading || locationsQuery.isError
+                      }
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
                     >
-                      <option value="Cairo">Cairo</option>
-                      <option value="Giza">Giza</option>
-                      <option value="Alexandria">Alexandria</option>
+                      <option value="">
+                        {locationsQuery.isLoading
+                          ? "Loading locations…"
+                          : "Select location"}
+                      </option>
+                      {locationsQuery.data?.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name}
+                          {item.requiresQuote
+                            ? " — quote required"
+                            : item.deliveryFee === null
+                              ? " — price not configured"
+                              : ""}
+                        </option>
+                      ))}
                     </select>
+                    {locationsQuery.isError && (
+                      <p className="mt-2 text-sm text-red-600">
+                        Locations could not load.{" "}
+                        <button
+                          type="button"
+                          className="underline"
+                          onClick={() => locationsQuery.refetch()}
+                        >
+                          Retry
+                        </button>
+                      </p>
+                    )}
                   </div>
                   <div>
-                    <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="postalCode"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Postal Code
                     </label>
                     <input
@@ -216,10 +381,15 @@ export const Checkout: FC = () => {
 
               {/* Delivery Options */}
               <div className="bg-white rounded-xl p-6 shadow-sm">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Delivery Options</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-6">
+                  Delivery Options
+                </h2>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="deliveryDate" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="deliveryDate"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Delivery Date *
                     </label>
                     <input
@@ -229,31 +399,44 @@ export const Checkout: FC = () => {
                       value={formData.deliveryDate}
                       onChange={handleChange}
                       required
-                      min={new Date().toISOString().split("T")[0]}
+                      min={today}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
                     />
                   </div>
-                  <div>
-                    <label htmlFor="deliveryTime" className="block text-sm font-medium text-gray-700 mb-2">
-                      Delivery Time *
-                    </label>
-                    <select
-                      id="deliveryTime"
-                      name="deliveryTime"
-                      value={formData.deliveryTime}
-                      onChange={handleChange}
-                      required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
-                    >
-                      <option value="">Select time</option>
-                      <option value="09:00-12:00">Morning (9:00 AM - 12:00 PM)</option>
-                      <option value="12:00-15:00">Afternoon (12:00 PM - 3:00 PM)</option>
-                      <option value="15:00-18:00">Evening (3:00 PM - 6:00 PM)</option>
-                    </select>
-                  </div>
+                  {formData.deliveryDate !== today && (
+                    <div>
+                      <label
+                        htmlFor="deliveryTime"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
+                        Delivery Time *
+                      </label>
+                      <select
+                        id="deliveryTime"
+                        name="deliveryTime"
+                        value={formData.deliveryTime}
+                        onChange={handleChange}
+                        required={Boolean(
+                          formData.deliveryDate &&
+                          formData.deliveryDate !== today,
+                        )}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                      >
+                        <option value="">Select time</option>
+                        {timeOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
                 <div className="mt-4">
-                  <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="notes"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Delivery Notes (Optional)
                   </label>
                   <textarea
@@ -270,14 +453,27 @@ export const Checkout: FC = () => {
 
               {/* Payment Method */}
               <div className="bg-white rounded-xl p-6 shadow-sm">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Payment Method</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-6">
+                  Payment Method
+                </h2>
                 <div className="space-y-3">
                   <label className="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-primary transition-colors">
-                    <input type="radio" name="payment" value="cash" defaultChecked className="text-primary focus:ring-primary" />
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="cash"
+                      defaultChecked
+                      className="text-primary focus:ring-primary"
+                    />
                     <span className="ml-3 font-medium">Cash on Delivery</span>
                   </label>
                   <label className="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-primary transition-colors">
-                    <input type="radio" name="payment" value="card" className="text-primary focus:ring-primary" />
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="card"
+                      className="text-primary focus:ring-primary"
+                    />
                     <span className="ml-3 font-medium">Credit/Debit Card</span>
                   </label>
                 </div>
@@ -293,6 +489,8 @@ export const Checkout: FC = () => {
                     <LoadingSpinner size="sm" />
                     Placing Order...
                   </>
+                ) : total === null ? (
+                  "Place quote request"
                 ) : (
                   `Place Order - ${formatCurrency(total)}`
                 )}
@@ -303,19 +501,30 @@ export const Checkout: FC = () => {
           {/* Order Summary */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl p-6 shadow-sm sticky top-24">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Order Summary</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-6">
+                Order Summary
+              </h2>
               <div className="space-y-4 mb-6">
                 {cart.items.map((item) => (
-                  <div key={`${item.product.id}-${item.selectedSize || "default"}`} className="flex gap-3">
+                  <div
+                    key={`${item.product.id}-${item.selectedSize || "default"}`}
+                    className="flex gap-3"
+                  >
                     <img
                       src={item.product.image}
                       alt={item.product.name}
                       className="w-16 h-16 rounded-lg object-cover"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{item.product.name}</p>
-                      <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
-                      <p className="text-sm font-bold text-primary">{formatCurrency(item.product.price * item.quantity)}</p>
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {item.product.name}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Qty: {item.quantity}
+                      </p>
+                      <p className="text-sm font-bold text-primary">
+                        {formatCurrency(item.product.price * item.quantity)}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -328,12 +537,22 @@ export const Checkout: FC = () => {
                 <div className="flex justify-between text-gray-600">
                   <span>Shipping</span>
                   <span className={shippingCost === 0 ? "text-success" : ""}>
-                    {shippingCost === 0 ? "Free" : formatCurrency(shippingCost)}
+                    {quoteRequired
+                      ? "Quote required"
+                      : shippingCost === null
+                        ? "Select a priced location"
+                        : shippingCost === 0
+                          ? "Free"
+                          : formatCurrency(shippingCost)}
                   </span>
                 </div>
                 <div className="flex justify-between text-xl font-bold text-gray-900 pt-2 border-t border-gray-200">
                   <span>Total</span>
-                  <span className="text-primary">{formatCurrency(total)}</span>
+                  <span className="text-primary">
+                    {total === null
+                      ? "Calculated after quote"
+                      : formatCurrency(total)}
+                  </span>
                 </div>
               </div>
             </div>

@@ -1,6 +1,22 @@
 /**
  * Product-related types
  */
+export const BEST_SELLER_BADGE = "Best Seller";
+
+export const normalizeBestSellerBadge = (badge?: string | null) => {
+  if (typeof badge !== "string") return null;
+
+  const trimmed = badge.trim();
+  if (!trimmed) return null;
+
+  return trimmed.toLowerCase() === BEST_SELLER_BADGE.toLowerCase()
+    ? BEST_SELLER_BADGE
+    : null;
+};
+
+export const isBestSellerProduct = (product?: Pick<Product, "badge"> | null) =>
+  normalizeBestSellerBadge(product?.badge) === BEST_SELLER_BADGE;
+
 export interface Product {
   id: string;
   name: string;

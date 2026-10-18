@@ -2,7 +2,7 @@ export const adminAr = {
   settings: "الإعدادات", contactSettings: "وسائل التواصل", contactSettingsIntro: "عدّل بيانات التواصل واختر بشكل مستقل الوسائل الصالحة التي تظهر للزوار.",
   contactPhone: "الهاتف", contactEmail: "البريد الإلكتروني", contactWhatsapp: "واتساب", contactTelegram: "تيليجرام", contactValue: "بيانات التواصل", showPublicly: "إظهار في المتجر", saveSettings: "حفظ إعدادات التواصل", settingsSaved: "تم حفظ إعدادات التواصل.",
   phoneHint: "احتفظ برقم العرض المقدم كما هو. أضف رمز الدولة فقط عند الحاجة للاتصال الدولي.", emailHint: "بريد تواصل عام؛ إرسال البريد غير مهيأ في هذا المشروع.", whatsappHint: "أدخل رقم هاتف. يحذف الرابط العام المسافات والرموز؛ استخدم رمز الدولة الدولي لرابط واتساب.", telegramHint: "أدخل اسم مستخدم عام أو رابط https://t.me/username. لا تدخل رمز بوت هنا.", contactRequired: "أدخل قيمة قبل تفعيل وسيلة التواصل.",
-  dashboard: "لوحة التحكم", products: "المنتجات", orders: "الطلبات", categories: "التصنيفات", occasions: "المناسبات", users: "المستخدمون",
+  dashboard: "لوحة التحكم", products: "المنتجات", orders: "الطلبات", categories: "التصنيفات", occasions: "المناسبات", users: "المستخدمون", deliveryLocations: "مناطق التوصيل",
   backToStore: "العودة للمتجر", language: "English", theme: "المظهر", light: "فاتح", dark: "داكن", system: "النظام",
   totalProducts: "إجمالي المنتجات", totalOrders: "إجمالي الطلبات", totalUsers: "إجمالي المستخدمين",
   addProduct: "إضافة منتج", addCategory: "إضافة تصنيف", addOccasion: "إضافة مناسبة", editProduct: "تعديل المنتج", newProduct: "منتج جديد",

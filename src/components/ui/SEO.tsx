@@ -10,9 +10,11 @@ interface SEOProps {
 
 export const SEO: FC<SEOProps> = ({
   title = "Wardity - A Blooming Connection",
-  description = "Experience same-day flower delivery to Cairo and Giza. Shop beautiful bouquets, arrangements, and gifts for every occasion.",
+  description = "Experience same-day flower delivery in Cairo only. Shop beautiful bouquets, arrangements, and gifts for every occasion.",
   image = "https://wardity.com/og-image.jpg",
-  url = typeof window !== "undefined" ? window.location.href : "https://wardity.com",
+  url = typeof window !== "undefined"
+    ? window.location.href
+    : "https://wardity.com",
   type = "website",
 }) => {
   return (
@@ -32,4 +34,3 @@ export const SEO: FC<SEOProps> = ({
     </>
   );
 };
-

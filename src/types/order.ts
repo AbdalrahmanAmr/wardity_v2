@@ -1,5 +1,6 @@
 export type OrderStatus =
   | "pending"
+  | "awaiting_shipping_quote"
   | "confirmed"
   | "preparing"
   | "out for delivery"
@@ -24,7 +25,15 @@ export interface OrderItem {
 export interface Order {
   id: string;
   status: OrderStatus;
-  total: number;
+  total: number | null;
+  merchandiseSubtotal?: number | null;
+  deliveryLocationId?: string | null;
+  deliveryLocationName?: string | null;
+  deliveryLocationNameAr?: string | null;
+  deliveryFee?: number | null;
+  requestedDeliveryDate?: string | null;
+  requestedDeliveryTime?: string | null;
+  requiresShippingQuote?: boolean | number;
   shippingAddress: string;
   paymentMethod?: string;
   createdAt: string;

@@ -6,6 +6,8 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import { notFoundHandler } from "./middleware/notFoundHandler.js";
 import { trackingRouter } from "./routes/tracking.js";
 import { settingsRouter } from "./routes/settings.js";
+import { newsletterRouter } from "./routes/newsletter.js";
+import { deliveryLocationsRouter } from "./routes/delivery-locations.js";
 import { UPLOADS_DIR } from "./utils/uploads.js";
 import { mkdirSync } from "fs";
 
@@ -50,10 +52,12 @@ async function bootstrap() {
       credentials: true,
     }),
   );
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
+  app.use(express.json({ limit: "100kb" }));
+  app.use(express.urlencoded({ extended: true, limit: "100kb" }));
   app.use("/api/track", trackingRouter);
   app.use("/api/settings", settingsRouter);
+  app.use("/api/newsletter", newsletterRouter);
+  app.use("/api/delivery-locations", deliveryLocationsRouter);
   app.use(
     "/uploads",
     express.static(UPLOADS_DIR, {

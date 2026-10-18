@@ -38,7 +38,10 @@ export const HeroBanner: FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const { t, isRTL, language } = useLanguage();
   const carouselQuery = useCarousel();
-  const heroSlides = carouselQuery.isError || !carouselQuery.data?.length ? fallbackSlides : carouselQuery.data;
+  const heroSlides =
+    carouselQuery.isError || !carouselQuery.data?.length
+      ? fallbackSlides
+      : carouselQuery.data;
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
@@ -57,10 +60,16 @@ export const HeroBanner: FC = () => {
       {/* Background */}
       <div className="relative h-[400px] md:h-[500px] lg:h-[600px]">
         {/* Image */}
-        <div
-          className="absolute inset-0 bg-cover bg-center transition-all duration-700"
-          style={{ backgroundImage: `url(${slide?.image})` }}
-        >
+        <div className="absolute inset-0">
+          <img
+            src={slide?.image}
+            alt=""
+            aria-hidden="true"
+            fetchPriority="high"
+            loading="eager"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover object-center"
+          />
           {/* Overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
         </div>
@@ -69,19 +78,40 @@ export const HeroBanner: FC = () => {
         <div className="relative container mx-auto px-4 h-full flex items-center">
           <div className="max-w-xl text-white animate-fade-in">
             <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold leading-snug mb-4 drop-shadow-lg">
-              {currentSlide === 0 && !carouselQuery.data ? t("heroTitle") : <span lang={language === "ar" ? "en" : undefined} dir={language === "ar" ? "ltr" : undefined}>{language === "ar" && slide?.headlineAr ? slide.headlineAr : slide?.headline}</span>}
+              {currentSlide === 0 && !carouselQuery.data ? (
+                t("heroTitle")
+              ) : (
+                <span
+                  lang={language === "ar" ? "en" : undefined}
+                  dir={language === "ar" ? "ltr" : undefined}
+                >
+                  {language === "ar" && slide?.headlineAr
+                    ? slide.headlineAr
+                    : slide?.headline}
+                </span>
+              )}
             </h1>
-            {(language === "ar" ? slide?.subHeadlineAr || slide?.subHeadline : slide?.subHeadline) && (
+            {(language === "ar"
+              ? slide?.subHeadlineAr || slide?.subHeadline
+              : slide?.subHeadline) && (
               <p className="text-lg md:text-xl text-white/90 mb-6">
-                {language === "ar" ? slide?.subHeadlineAr || slide?.subHeadline : slide?.subHeadline}
+                {language === "ar"
+                  ? slide?.subHeadlineAr || slide?.subHeadline
+                  : slide?.subHeadline}
               </p>
             )}
             <Link
               to={slide?.ctaLink || "/"}
               className="inline-flex items-center gap-2 bg-primary text-white px-8 py-4 rounded-full font-semibold hover:bg-primary-600 transition-all shadow-lg hover:shadow-xl hover:scale-105"
             >
-              {currentSlide === 0 && !carouselQuery.data ? t("giftNow") : (language === "ar" ? slide?.ctaTextAr || slide?.ctaText : slide?.ctaText)}
-              <ChevronRightIcon className={`w-5 h-5 ${isRTL ? "-scale-x-100" : ""}`} />
+              {currentSlide === 0 && !carouselQuery.data
+                ? t("giftNow")
+                : language === "ar"
+                  ? slide?.ctaTextAr || slide?.ctaText
+                  : slide?.ctaText}
+              <ChevronRightIcon
+                className={`w-5 h-5 ${isRTL ? "-scale-x-100" : ""}`}
+              />
             </Link>
           </div>
         </div>
@@ -92,14 +122,18 @@ export const HeroBanner: FC = () => {
           className="absolute start-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
           aria-label="Previous slide"
         >
-          <ChevronLeftIcon className={`w-6 h-6 ${isRTL ? "-scale-x-100" : ""}`} />
+          <ChevronLeftIcon
+            className={`w-6 h-6 ${isRTL ? "-scale-x-100" : ""}`}
+          />
         </button>
         <button
           onClick={nextSlide}
           className="absolute end-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
           aria-label="Next slide"
         >
-          <ChevronRightIcon className={`w-6 h-6 ${isRTL ? "-scale-x-100" : ""}`} />
+          <ChevronRightIcon
+            className={`w-6 h-6 ${isRTL ? "-scale-x-100" : ""}`}
+          />
         </button>
 
         {/* Dots */}

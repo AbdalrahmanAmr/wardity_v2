@@ -13,7 +13,10 @@ export const ErrorBlock: FC<ErrorBlockProps> = ({
   onRetry,
 }) => {
   return (
-    <div className="flex items-center justify-center min-h-[300px]">
+    <div
+      role="alert"
+      className="flex items-center justify-center min-h-[300px]"
+    >
       <div className="max-w-md w-full bg-red-50 border border-red-200 rounded-xl p-6 text-center">
         <div className="flex justify-center mb-4">
           <div className="p-3 bg-red-100 rounded-full">
@@ -25,7 +28,7 @@ export const ErrorBlock: FC<ErrorBlockProps> = ({
         {onRetry && (
           <button
             onClick={onRetry}
-            className="px-6 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors shadow-sm"
+            className="px-6 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700 focus-visible:ring-offset-2"
           >
             Try Again
           </button>
@@ -34,4 +37,3 @@ export const ErrorBlock: FC<ErrorBlockProps> = ({
     </div>
   );
 };
-

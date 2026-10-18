@@ -12,6 +12,15 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
+export const newsletterSubscriptionSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .max(254, "Email address is too long")
+    .email("Invalid email address"),
+});
+
 // Product validation schemas
 const productFieldsSchema = z.object({
   name: z.string().min(1, "Product name is required"),
@@ -22,35 +31,78 @@ const productFieldsSchema = z.object({
   imageDesc: z.string().optional(),
   brandLogo: z.string().url().optional().nullable(),
   status: z.enum(["In stock", "Out of stock"]).optional(),
-  sku: z.string().optional(),
-  description: z.string().optional(),
+  // These fields are nullable in MySQL.  Admin edits can therefore round-trip
+  // an existing NULL value; rejecting it here turns a valid edit into a 500.
+  sku: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
   descriptionAr: z.string().optional().nullable(),
-  categoryId: z.string().min(1, "Category selection is invalid").optional().nullable(),
-  occasionId: z.string().min(1, "Occasion selection is invalid").optional().nullable(),
-  salePrice: z.number().positive("Sale price must be positive").optional().nullable(),
+  categoryId: z
+    .string()
+    .min(1, "Category selection is invalid")
+    .optional()
+    .nullable(),
+  occasionId: z
+    .string()
+    .min(1, "Occasion selection is invalid")
+    .optional()
+    .nullable(),
+  salePrice: z
+    .number()
+    .positive("Sale price must be positive")
+    .optional()
+    .nullable(),
   isOnSale: z.boolean().optional(),
   saleEndsAt: z.string().datetime().optional().nullable(),
-  stockQuantity: z.number().int().nonnegative("Stock quantity cannot be negative").optional().nullable(),
+  stockQuantity: z
+    .number()
+    .int()
+    .nonnegative("Stock quantity cannot be negative")
+    .optional()
+    .nullable(),
   images: z.array(z.string().url()).max(8).optional(),
 });
 
-export const createProductSchema = productFieldsSchema.superRefine((product, context) => {
-  if (product.salePrice != null && product.salePrice >= product.price) {
-    context.addIssue({ code: z.ZodIssueCode.custom, path: ["salePrice"], message: "Sale price must be less than the regular price" });
-  }
-  if (product.isOnSale && product.salePrice == null) {
-    context.addIssue({ code: z.ZodIssueCode.custom, path: ["salePrice"], message: "Sale price is required when a product is on sale" });
-  }
-});
+export const createProductSchema = productFieldsSchema.superRefine(
+  (product, context) => {
+    if (product.salePrice != null && product.salePrice >= product.price) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["salePrice"],
+        message: "Sale price must be less than the regular price",
+      });
+    }
+    if (product.isOnSale && product.salePrice == null) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["salePrice"],
+        message: "Sale price is required when a product is on sale",
+      });
+    }
+  },
+);
 
-export const updateProductSchema = productFieldsSchema.partial().superRefine((product, context) => {
-  if (product.salePrice != null && product.price != null && product.salePrice >= product.price) {
-    context.addIssue({ code: z.ZodIssueCode.custom, path: ["salePrice"], message: "Sale price must be less than the regular price" });
-  }
-  if (product.isOnSale && product.salePrice == null) {
-    context.addIssue({ code: z.ZodIssueCode.custom, path: ["salePrice"], message: "Sale price is required when a product is on sale" });
-  }
-});
+export const updateProductSchema = productFieldsSchema
+  .partial()
+  .superRefine((product, context) => {
+    if (
+      product.salePrice != null &&
+      product.price != null &&
+      product.salePrice >= product.price
+    ) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["salePrice"],
+        message: "Sale price must be less than the regular price",
+      });
+    }
+    if (product.isOnSale && product.salePrice == null) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["salePrice"],
+        message: "Sale price is required when a product is on sale",
+      });
+    }
+  });
 
 // Cart validation schemas
 export const addToCartSchema = z.object({
@@ -71,12 +123,22 @@ export const addToWishlistSchema = z.object({
 // Order validation schemas
 export const createOrderSchema = z.object({
   shippingAddress: z.string().min(1, "Shipping address is required"),
+  customerName: z.string().min(1, "Customer name is required").optional(),
   paymentMethod: z.string().optional(),
   eventId: z.string().uuid().optional(),
   consent: z.boolean().optional().default(false),
   email: z.string().email().optional(),
   phone: z.string().optional(),
   sourceUrl: z.string().url().optional(),
+  deliveryLocationId: z.string().min(1, "Select a delivery location"),
+  requestedDeliveryDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Select a valid delivery date"),
+  requestedDeliveryTime: z
+    .string()
+    .regex(/^\d{2}:\d{2}$/)
+    .optional()
+    .nullable(),
 });
 
 export const trackEventSchema = z.object({

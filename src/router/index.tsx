@@ -1,45 +1,98 @@
+import { lazy, type ComponentType } from "react";
 import { createBrowserRouter, Link } from "react-router-dom";
 import { RootLayout } from "@/layouts/RootLayout";
 import { AdminLayout } from "@/layouts/AdminLayout";
 import { AdminRoute } from "@/components/auth/AdminRoute";
-import {
-  Home,
-  Product,
-  NotFound,
-  Cart,
-  Login,
-  Register,
-  Search,
-  Checkout,
-  Categories,
-  CategoryDetail,
-  Occasions,
-  OccasionDetail,
-  Brands,
-  SpecialGifts,
-  CollectionDetail,
-  BestSellers,
-  Wishlist,
-  Profile,
-  Orders,
-  OrderTracking,
-  Contact,
-  FAQs,
-  Delivery,
-  TrackOrder,
-  About,
-  Privacy,
-  Terms,
-  AdminDashboard,
-  AdminProducts,
-  AdminOrders,
-  AdminCategories,
-  AdminOccasions,
-  AdminUsers,
-  AdminCarousel,
-  AdminSettings,
-} from "@/pages";
+import { NotFound } from "@/pages/NotFound";
 import { categoryLoader, occasionLoader } from "./loaders";
+
+function lazyPage<T extends ComponentType>(
+  loader: () => Promise<unknown>,
+  exportName: string,
+) {
+  return lazy(async () => {
+    const page = (await loader()) as Record<string, T>;
+    return { default: page[exportName]! };
+  });
+}
+
+const Home = lazyPage(() => import("@/pages/Home"), "Home");
+const Product = lazyPage(() => import("@/pages/Product"), "Product");
+const Cart = lazyPage(() => import("@/pages/Cart"), "Cart");
+const Login = lazyPage(() => import("@/pages/Login"), "Login");
+const Register = lazyPage(() => import("@/pages/Register"), "Register");
+const Search = lazyPage(() => import("@/pages/Search"), "Search");
+const Checkout = lazyPage(() => import("@/pages/Checkout"), "Checkout");
+const Categories = lazyPage(() => import("@/pages/Categories"), "Categories");
+const CategoryDetail = lazyPage(
+  () => import("@/pages/CategoryDetail"),
+  "CategoryDetail",
+);
+const Occasions = lazyPage(() => import("@/pages/Occasions"), "Occasions");
+const OccasionDetail = lazyPage(
+  () => import("@/pages/OccasionDetail"),
+  "OccasionDetail",
+);
+const Brands = lazyPage(() => import("@/pages/Brands"), "Brands");
+const SpecialGifts = lazyPage(
+  () => import("@/pages/SpecialGifts"),
+  "SpecialGifts",
+);
+const CollectionDetail = lazyPage(
+  () => import("@/pages/CollectionDetail"),
+  "CollectionDetail",
+);
+const BestSellers = lazyPage(
+  () => import("@/pages/BestSellers"),
+  "BestSellers",
+);
+const Wishlist = lazyPage(() => import("@/pages/Wishlist"), "Wishlist");
+const Profile = lazyPage(() => import("@/pages/Profile"), "Profile");
+const Orders = lazyPage(() => import("@/pages/Orders"), "Orders");
+const OrderTracking = lazyPage(
+  () => import("@/pages/OrderTracking"),
+  "OrderTracking",
+);
+const Contact = lazyPage(() => import("@/pages/Contact"), "Contact");
+const About = lazyPage(() => import("@/pages/About"), "About");
+const Privacy = lazyPage(() => import("@/pages/Privacy"), "Privacy");
+const Terms = lazyPage(() => import("@/pages/Terms"), "Terms");
+const AdminDashboard = lazyPage(
+  () => import("@/pages/admin/AdminDashboard"),
+  "AdminDashboard",
+);
+const AdminProducts = lazyPage(
+  () => import("@/pages/admin/AdminProducts"),
+  "AdminProducts",
+);
+const AdminOrders = lazyPage(
+  () => import("@/pages/admin/AdminOrders"),
+  "AdminOrders",
+);
+const AdminCategories = lazyPage(
+  () => import("@/pages/admin/AdminCategories"),
+  "AdminCategories",
+);
+const AdminOccasions = lazyPage(
+  () => import("@/pages/admin/AdminOccasions"),
+  "AdminOccasions",
+);
+const AdminUsers = lazyPage(
+  () => import("@/pages/admin/AdminUsers"),
+  "AdminUsers",
+);
+const AdminCarousel = lazyPage(
+  () => import("@/pages/admin/AdminCarousel"),
+  "AdminCarousel",
+);
+const AdminSettings = lazyPage(
+  () => import("@/pages/admin/AdminSettings"),
+  "AdminSettings",
+);
+const AdminDeliveryLocations = lazyPage(
+  () => import("@/pages/admin/AdminDeliveryLocations"),
+  "AdminDeliveryLocations",
+);
 
 const ProductError = () => (
   <div className="min-h-[60vh] flex items-center justify-center bg-wardity-bg dark:bg-wardity-bg-dark py-16 px-4">
@@ -48,7 +101,8 @@ const ProductError = () => (
         Product Not Found
       </h2>
       <p className="text-gray-600 dark:text-gray-400 mb-6">
-        The product you are looking for does not exist, has been removed, or could not be loaded.
+        The product you are looking for does not exist, has been removed, or
+        could not be loaded.
       </p>
       <Link
         to="/"
@@ -150,18 +204,6 @@ export const router = createBrowserRouter([
         element: <Contact />,
       },
       {
-        path: "faqs",
-        element: <FAQs />,
-      },
-      {
-        path: "delivery",
-        element: <Delivery />,
-      },
-      {
-        path: "track-order",
-        element: <TrackOrder />,
-      },
-      {
         path: "about",
         element: <About />,
       },
@@ -220,6 +262,7 @@ export const router = createBrowserRouter([
         path: "settings",
         element: <AdminSettings />,
       },
+      { path: "delivery-locations", element: <AdminDeliveryLocations /> },
     ],
   },
 ]);

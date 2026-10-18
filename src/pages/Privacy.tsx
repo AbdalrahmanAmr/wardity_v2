@@ -168,7 +168,7 @@ export const Privacy: FC = () => {
                 <strong>Email:</strong> privacy@wardity.com
               </p>
               <p className="text-gray-700 dark:text-gray-300 mt-2">
-                <strong>Phone:</strong> +20 123 456 7890
+                <strong>Phone:</strong> 01100374039 / 01007906629
               </p>
             </div>
           </section>
@@ -177,4 +177,3 @@ export const Privacy: FC = () => {
     </div>
   );
 };
-

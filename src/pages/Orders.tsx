@@ -6,13 +6,29 @@ import { useOrders } from "@/services/queries/orderQueries";
 import { formatDate, formatCurrency } from "@/utils/formatters";
 import { TruckIcon } from "@heroicons/react/24/outline";
 
-const statusLabel = (status: string, arabic: boolean) => arabic
-  ? ({ pending: "قيد الانتظار", confirmed: "مؤكد", preparing: "قيد التجهيز", "out for delivery": "خرج للتوصيل", processing: "قيد المعالجة", shipped: "تم الشحن", delivered: "تم التوصيل", cancelled: "ملغي" }[status] || status)
-  : status.replace(/\b\w/g, (letter) => letter.toUpperCase());
+const statusLabel = (status: string, arabic: boolean) =>
+  arabic
+    ? {
+        pending: "قيد الانتظار",
+        awaiting_shipping_quote: "بانتظار عرض سعر التوصيل",
+        confirmed: "مؤكد",
+        preparing: "قيد التجهيز",
+        "out for delivery": "خرج للتوصيل",
+        processing: "قيد المعالجة",
+        shipped: "تم الشحن",
+        delivered: "تم التوصيل",
+        cancelled: "ملغي",
+      }[status] || status
+    : status.replace(/\b\w/g, (letter) => letter.toUpperCase());
 
-const statusColor = (status: string) => status === "delivered" ? "text-success bg-success/10" : status === "cancelled" ? "text-red-600 bg-red-50" : "text-primary bg-primary/10";
+const statusColor = (status: string) =>
+  status === "delivered"
+    ? "text-success bg-success/10"
+    : status === "cancelled"
+      ? "text-red-600 bg-red-50"
+      : "text-primary bg-primary/10";
 
-export const Orders: FC = () => {
+export const LegacyOrders: FC = () => {
   const { isAuthenticated } = useAuth();
   const { language, t } = useLanguage();
   const navigate = useNavigate();
@@ -23,18 +39,226 @@ export const Orders: FC = () => {
   }, [isAuthenticated, navigate]);
   if (!isAuthenticated) return null;
 
-  if (query.isLoading) return <div className="min-h-screen bg-wardity-bg py-12"><div className="container mx-auto space-y-4 px-4">{[1, 2, 3].map((item) => <div key={item} className="h-36 animate-pulse rounded-xl bg-white" />)}</div></div>;
-  if (query.isError) return <div className="container mx-auto min-h-screen px-4 py-16 text-center"><h1 className="text-2xl font-bold text-gray-900">{language === "ar" ? "تعذر تحميل الطلبات" : "Unable to load orders"}</h1><p className="mt-2 text-gray-600">{language === "ar" ? "حاول مرة أخرى لاحقاً." : "Please try again later."}</p></div>;
+  if (query.isLoading)
+    return (
+      <div className="min-h-screen bg-wardity-bg py-12">
+        <div className="container mx-auto space-y-4 px-4">
+          {[1, 2, 3].map((item) => (
+            <div
+              key={item}
+              className="h-36 animate-pulse rounded-xl bg-white"
+            />
+          ))}
+        </div>
+      </div>
+    );
+  if (query.isError)
+    return (
+      <div className="container mx-auto min-h-screen px-4 py-16 text-center">
+        <h1 className="text-2xl font-bold text-gray-900">
+          {language === "ar" ? "تعذر تحميل الطلبات" : "Unable to load orders"}
+        </h1>
+        <p className="mt-2 text-gray-600">
+          {language === "ar"
+            ? "حاول مرة أخرى لاحقاً."
+            : "Please try again later."}
+        </p>
+      </div>
+    );
   const orders = query.data || [];
 
-  return <div className="min-h-screen bg-wardity-bg py-12" dir={language === "ar" ? "rtl" : "ltr"}>
-    <div className="container mx-auto px-4">
-      <h1 className="mb-8 text-3xl font-bold text-gray-900">{t("orders")}</h1>
-      {orders.length === 0 ? <div className="rounded-xl bg-white p-12 text-center"><TruckIcon className="mx-auto mb-4 h-24 w-24 text-gray-300" /><h2 className="text-2xl font-bold text-gray-900">{language === "ar" ? "لا توجد طلبات بعد" : "No orders yet"}</h2><p className="mb-6 text-gray-600">{language === "ar" ? "ابدأ التسوق لرؤية طلباتك هنا" : "Start shopping to see your orders here"}</p><Link to="/" className="inline-block rounded-lg bg-primary px-8 py-3 font-semibold text-white">{language === "ar" ? "ابدأ التسوق" : "Start Shopping"}</Link></div> :
-        <div className="space-y-4">{orders.map((order) => <div key={order.id} className="rounded-xl bg-white p-6 shadow-sm">
-          <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-center"><div><div className="mb-2 flex items-center gap-3"><h2 className="text-lg font-bold text-gray-900">#{order.id}</h2><span className={`rounded-full px-3 py-1 text-sm font-medium ${statusColor(order.status)}`}>{statusLabel(order.status, language === "ar")}</span></div><p className="text-sm text-gray-600">{formatDate(order.createdAt)}</p></div><div className="text-right"><p className="text-2xl font-bold text-primary">{formatCurrency(order.total)}</p><Link to={`/orders/${encodeURIComponent(order.id)}`} className="text-sm text-primary hover:underline">{language === "ar" ? "عرض التفاصيل" : "View Details"}</Link></div></div>
-          <div className="flex gap-4 overflow-x-auto border-t border-gray-200 pt-4">{order.items.map((item) => <img key={item.id} src={item.product.image} alt={item.product.name} className="h-20 w-20 flex-shrink-0 rounded-lg object-cover" />)}</div>
-        </div>)}</div>}
+  return (
+    <div
+      className="min-h-screen bg-wardity-bg py-12"
+      dir={language === "ar" ? "rtl" : "ltr"}
+    >
+      <div className="container mx-auto px-4">
+        <h1 className="mb-8 text-3xl font-bold text-gray-900">{t("orders")}</h1>
+        {orders.length === 0 ? (
+          <div className="rounded-xl bg-white p-12 text-center">
+            <TruckIcon className="mx-auto mb-4 h-24 w-24 text-gray-300" />
+            <h2 className="text-2xl font-bold text-gray-900">
+              {language === "ar" ? "لا توجد طلبات بعد" : "No orders yet"}
+            </h2>
+            <p className="mb-6 text-gray-600">
+              {language === "ar"
+                ? "ابدأ التسوق لرؤية طلباتك هنا"
+                : "Start shopping to see your orders here"}
+            </p>
+            <Link
+              to="/"
+              className="inline-block rounded-lg bg-primary px-8 py-3 font-semibold text-white"
+            >
+              {language === "ar" ? "ابدأ التسوق" : "Start Shopping"}
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {orders.map((order) => (
+              <div key={order.id} className="rounded-xl bg-white p-6 shadow-sm">
+                <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-center">
+                  <div>
+                    <div className="mb-2 flex items-center gap-3">
+                      <h2 className="text-lg font-bold text-gray-900">
+                        #{order.id}
+                      </h2>
+                      <span
+                        className={`rounded-full px-3 py-1 text-sm font-medium ${statusColor(order.status)}`}
+                      >
+                        {statusLabel(order.status, language === "ar")}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      {formatDate(order.createdAt)}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-primary">
+                      {formatCurrency(order.total)}
+                    </p>
+                    <Link
+                      to={`/orders/${encodeURIComponent(order.id)}`}
+                      className="text-sm text-primary hover:underline"
+                    >
+                      {language === "ar" ? "عرض التفاصيل" : "View Details"}
+                    </Link>
+                  </div>
+                </div>
+                <div className="flex gap-4 overflow-x-auto border-t border-gray-200 pt-4">
+                  {order.items.map((item) => (
+                    <img
+                      key={item.id}
+                      src={item.product.image}
+                      alt={item.product.name}
+                      className="h-20 w-20 flex-shrink-0 rounded-lg object-cover"
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
-  </div>;
+  );
+};
+
+export const Orders: FC = () => {
+  const { isAuthenticated } = useAuth();
+  const { language, t } = useLanguage();
+  const navigate = useNavigate();
+  const query = useOrders(isAuthenticated);
+  const ar = language === "ar";
+  useEffect(() => {
+    if (!isAuthenticated) navigate("/login");
+  }, [isAuthenticated, navigate]);
+  if (!isAuthenticated) return null;
+  if (query.isLoading)
+    return <div className="min-h-screen bg-wardity-bg py-12" />;
+  if (query.isError)
+    return (
+      <div className="min-h-screen bg-wardity-bg p-12 text-center">
+        {ar ? "تعذر تحميل الطلبات" : "Unable to load orders"}
+      </div>
+    );
+  return (
+    <main className="min-h-screen bg-wardity-bg py-12" dir={ar ? "rtl" : "ltr"}>
+      <div className="container mx-auto max-w-4xl px-4">
+        <h1 className="mb-8 text-3xl font-bold">{t("orders")}</h1>
+        <div className="space-y-4">
+          {(query.data || []).map((order) => {
+            const quote =
+              order.status === "awaiting_shipping_quote" ||
+              Boolean(order.requiresShippingQuote);
+            const location = ar
+              ? order.deliveryLocationNameAr || order.deliveryLocationName
+              : order.deliveryLocationName;
+            const schedule = order.requestedDeliveryDate
+              ? (() => {
+                  const timeText = order.requestedDeliveryTime
+                    ? ` · ${order.requestedDeliveryTime}`
+                    : ar
+                      ? " · اليوم / في أقرب وقت"
+                      : " · Today / ASAP";
+
+                  return `${order.requestedDeliveryDate}${timeText}`;
+                })()
+              : null;
+
+            return (
+              <article
+                key={order.id}
+                className="rounded-xl bg-white p-5 shadow-sm"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h2 className="font-bold">#{order.id}</h2>
+                    <p className="text-sm text-gray-500">
+                      {formatDate(order.createdAt)}
+                    </p>
+                  </div>
+                  <b className={quote ? "text-amber-700" : "text-primary"}>
+                    {quote
+                      ? ar
+                        ? "بانتظار عرض سعر التوصيل"
+                        : "Awaiting shipping quote"
+                      : formatCurrency(order.total)}
+                  </b>
+                </div>
+
+                {location && (
+                  <div className="mt-4 grid gap-2 border-t pt-3 text-sm sm:grid-cols-2">
+                    <p>
+                      <span className="text-gray-500">
+                        {ar ? "المنطقة: " : "Location: "}
+                      </span>
+                      {location}
+                    </p>
+
+                    {schedule && (
+                      <p>
+                        <span className="text-gray-500">
+                          {ar ? "الموعد: " : "Schedule: "}
+                        </span>
+                        {schedule}
+                      </p>
+                    )}
+
+                    <p>
+                      <span className="text-gray-500">
+                        {ar ? "الإجمالي الفرعي: " : "Subtotal: "}
+                      </span>
+                      {formatCurrency(order.merchandiseSubtotal)}
+                    </p>
+
+                    {quote ? (
+                      <p className="text-amber-700">
+                        {ar
+                          ? "رسوم التوصيل والإجمالي تحدد بعد عرض السعر."
+                          : "Delivery fee and final total are pending a quote."}
+                      </p>
+                    ) : (
+                      <p>
+                        <span className="text-gray-500">
+                          {ar ? "التوصيل: " : "Delivery: "}
+                        </span>
+                        {formatCurrency(order.deliveryFee)}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <Link
+                  to={`/orders/${encodeURIComponent(order.id)}`}
+                  className="mt-4 inline-block text-sm text-primary underline"
+                >
+                  {ar ? "عرض التفاصيل" : "View details"}
+                </Link>
+              </article>
+            );
+          })}
+        </div>
+      </div>
+    </main>
+  );
 };

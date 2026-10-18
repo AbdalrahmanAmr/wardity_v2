@@ -22,6 +22,7 @@ import { validate, createProductSchema, updateProductSchema } from "../utils/val
 import { getEffectiveSale, ProductSaleFields } from "../utils/productPricing.js";
 import { readContactSettings, validateContactSettings, writeContactSettings } from "../utils/contactSettings.js";
 import { dbGet, dbAll, dbRun, dbTransaction } from "../database/mysql.js";
+import type { ExecuteValues } from "mysql2/promise";
 
 export const adminRouterMySQL = Router();
 
@@ -33,6 +34,35 @@ adminRouterMySQL.use(requireAdmin);
 // ── Contact settings ───────────────────────────────────────────────────────
 adminRouterMySQL.get("/settings/contact", (_req, res: Response) => {
   res.json({ data: readContactSettings() });
+});
+
+// ── Delivery locations ────────────────────────────────────────────────────
+type DeliveryLocationInput = { name?: unknown; nameAr?: unknown; deliveryFee?: unknown; isActive?: unknown; requiresQuote?: unknown };
+function deliveryLocationValues(input: DeliveryLocationInput) {
+  if (typeof input.name !== "string" || !input.name.trim()) throw Object.assign(new Error("English name is required."), { code: 400 });
+  if (typeof input.nameAr !== "string" || !input.nameAr.trim()) throw Object.assign(new Error("Arabic name is required."), { code: 400 });
+  const requiresQuote = input.requiresQuote === true;
+  const fee = input.deliveryFee === null || input.deliveryFee === "" || input.deliveryFee === undefined ? null : Number(input.deliveryFee);
+  if (!requiresQuote && fee !== null && (!Number.isFinite(fee) || fee < 0)) throw Object.assign(new Error("Delivery fee must be zero or greater."), { code: 400 });
+  return { name: input.name.trim(), nameAr: input.nameAr.trim(), deliveryFee: requiresQuote ? null : fee, requiresQuote, isActive: input.isActive !== false };
+}
+
+adminRouterMySQL.get("/delivery-locations", async (_req, res: Response) => {
+  const locations = await dbAll("SELECT id, name, name_ar AS nameAr, delivery_fee AS deliveryFee, requires_quote AS requiresQuote, is_active AS isActive FROM delivery_locations ORDER BY name");
+  res.json({ data: locations.map((location: any) => ({ ...location, requiresQuote: Boolean(location.requiresQuote), isActive: Boolean(location.isActive) })) });
+});
+adminRouterMySQL.post("/delivery-locations", async (req, res: Response) => {
+  const location = deliveryLocationValues(req.body);
+  const id = generateId();
+  await dbRun("INSERT INTO delivery_locations (id, name, name_ar, delivery_fee, requires_quote, is_active) VALUES (?, ?, ?, ?, ?, ?)", [id, location.name, location.nameAr, location.deliveryFee, location.requiresQuote ? 1 : 0, location.isActive ? 1 : 0]);
+  res.status(201).json({ data: { id, ...location } });
+});
+adminRouterMySQL.patch("/delivery-locations/:id", async (req, res: Response) => {
+  const existing = await dbGet<DeliveryLocationInput & { id: string }>("SELECT id, name, name_ar AS nameAr, delivery_fee AS deliveryFee, requires_quote AS requiresQuote, is_active AS isActive FROM delivery_locations WHERE id = ?", [req.params.id]);
+  if (!existing) { res.status(404).json({ message: "Delivery location not found." }); return; }
+  const location = deliveryLocationValues({ ...existing, ...req.body });
+  await dbRun("UPDATE delivery_locations SET name = ?, name_ar = ?, delivery_fee = ?, requires_quote = ?, is_active = ?, updated_at = NOW() WHERE id = ?", [location.name, location.nameAr, location.deliveryFee, location.requiresQuote ? 1 : 0, location.isActive ? 1 : 0, req.params.id]);
+  res.json({ data: { id: req.params.id, ...location } });
 });
 adminRouterMySQL.put("/settings/contact", (req, res: Response) => {
   try {
@@ -128,10 +158,52 @@ function formatCarouselSlide(slide: CarouselRow) {
   };
 }
 
+/**
+ * Creates a partial taxonomy update without ever binding `undefined` to
+ * mysql2. Fields omitted by the client are left untouched; explicit null is
+ * preserved so nullable image/localized fields can be cleared deliberately.
+ */
+async function updateTaxonomy(
+  table: "categories" | "occasions",
+  id: string,
+  body: Record<string, unknown>,
+): Promise<void> {
+  const value = (snake: string, camel: string): unknown =>
+    body[snake] !== undefined ? body[snake] : body[camel];
+  const values: ExecuteValues[] = [];
+  const assignments: string[] = [];
+  const toBoundValue = (input: unknown): ExecuteValues => {
+    if (input === null || typeof input === "string" || typeof input === "number" || typeof input === "boolean") return input;
+    throw Object.assign(new Error("Invalid taxonomy field value."), { code: 400 });
+  };
+  const assign = (column: string, next: unknown) => {
+    if (next !== undefined) { assignments.push(`\`${column}\` = ?`); values.push(toBoundValue(next)); }
+  };
+
+  const name = body.name;
+  if (name !== undefined && (typeof name !== "string" || !name.trim())) {
+    throw Object.assign(new Error("Name is required."), { code: 400 });
+  }
+  assign("name", typeof name === "string" ? name.trim() : name);
+
+  const requestedSlug = body.slug;
+  assign("slug", requestedSlug !== undefined ? requestedSlug : typeof name === "string" ? generateSlug(name) : undefined);
+  assign("image_type", value("image_type", "imageType"));
+  assign("image", body.image);
+  assign("name_ar", value("name_ar", "nameAr"));
+  if (table === "categories") assign("bg_color", value("bg_color", "bgColor"));
+  assign("sort_order", value("sort_order", "sortOrder"));
+  assign("is_active", value("is_active", "isActive"));
+
+  if (assignments.length === 0) return;
+  values.push(id);
+  await dbRun(`UPDATE \`${table}\` SET ${assignments.join(", ")} WHERE id = ?`, values);
+}
+
 // ── Orders ─────────────────────────────────────────────────────────────────
 adminRouterMySQL.get("/orders", async (_req, res: Response) => {
   const orders = await dbAll(
-    "SELECT id, user_id, status, total, shipping_address, payment_method, created_at, updated_at FROM orders ORDER BY created_at DESC",
+    "SELECT id, user_id, status, total, merchandise_subtotal, delivery_location_id, delivery_location_name, delivery_location_name_ar, delivery_fee, requested_delivery_date, requested_delivery_time, requires_shipping_quote, shipping_address, payment_method, created_at, updated_at FROM orders ORDER BY created_at DESC",
   );
   res.json({ data: orders });
 });
@@ -141,6 +213,23 @@ adminRouterMySQL.patch("/orders/:id", async (req, res: Response) => {
   if (!status) { res.status(400).json({ message: "Status is required" }); return; }
   await dbRun("UPDATE orders SET status = ?, updated_at = NOW() WHERE id = ?", [status, req.params.id]);
   res.json({ message: "Order status updated", status: 200 });
+});
+
+adminRouterMySQL.patch("/orders/:id/shipping-quote", async (req, res: Response) => {
+  const fee = Number(req.body?.deliveryFee);
+  if (!Number.isFinite(fee) || fee < 0) { res.status(400).json({ message: "Delivery fee must be zero or greater." }); return; }
+  const order = await dbGet<{ merchandise_subtotal: number | string | null; requires_shipping_quote: number; status: string }>(
+    "SELECT merchandise_subtotal, requires_shipping_quote, status FROM orders WHERE id = ?", [req.params.id],
+  );
+  if (!order) { res.status(404).json({ message: "Order not found." }); return; }
+  if (!order.requires_shipping_quote || order.status !== "awaiting_shipping_quote" || order.merchandise_subtotal === null) { res.status(409).json({ message: "This order is not awaiting a shipping quote." }); return; }
+  const subtotal = Number(order.merchandise_subtotal);
+  if (!Number.isFinite(subtotal)) { res.status(409).json({ message: "Order subtotal is unavailable." }); return; }
+  await dbRun(
+    "UPDATE orders SET delivery_fee = ?, total = ?, requires_shipping_quote = 0, status = 'pending', updated_at = NOW() WHERE id = ? AND requires_shipping_quote = 1 AND status = 'awaiting_shipping_quote'",
+    [fee, subtotal + fee, req.params.id],
+  );
+  res.json({ message: "Shipping quote saved." });
 });
 
 // ── Users ──────────────────────────────────────────────────────────────────
@@ -406,23 +495,7 @@ adminRouterMySQL.post("/categories", async (req, res: Response) => {
 });
 
 adminRouterMySQL.patch("/categories/:id", async (req, res: Response) => {
-  const { name, slug: requestedSlug, image_type, imageType, bg_color, bgColor, image, name_ar, nameAr, sort_order, sortOrder, is_active, isActive } = req.body;
-  let slug = requestedSlug || null;
-  if (name && !slug) slug = generateSlug(name);
-  await dbRun(
-    `UPDATE categories SET
-       name       = COALESCE(?, name),
-       slug       = COALESCE(?, slug),
-       image_type = COALESCE(?, image_type),
-       image      = COALESCE(?, image),
-       name_ar    = COALESCE(?, name_ar),
-       bg_color   = COALESCE(?, bg_color),
-       sort_order = COALESCE(?, sort_order),
-       is_active  = COALESCE(?, is_active)
-     WHERE id = ?`,
-    [name, slug, image_type ?? imageType, image, name_ar ?? nameAr, bg_color ?? bgColor,
-     sort_order ?? sortOrder, is_active ?? isActive, req.params.id],
-  );
+  await updateTaxonomy("categories", req.params.id, req.body);
   res.json({ message: "Category updated" });
 });
 
@@ -450,21 +523,7 @@ adminRouterMySQL.post("/occasions", async (req, res: Response) => {
 });
 
 adminRouterMySQL.patch("/occasions/:id", async (req, res: Response) => {
-  const { name, slug: requestedSlug, image_type, imageType, image, name_ar, nameAr, sort_order, sortOrder, is_active, isActive } = req.body;
-  let slug = requestedSlug || null;
-  if (name && !slug) slug = generateSlug(name);
-  await dbRun(
-    `UPDATE occasions SET
-       name       = COALESCE(?, name),
-       slug       = COALESCE(?, slug),
-       image_type = COALESCE(?, image_type),
-       image      = COALESCE(?, image),
-       name_ar    = COALESCE(?, name_ar),
-       sort_order = COALESCE(?, sort_order),
-       is_active  = COALESCE(?, is_active)
-     WHERE id = ?`,
-    [name, slug, image_type ?? imageType, image, name_ar ?? nameAr, sort_order ?? sortOrder, is_active ?? isActive, req.params.id],
-  );
+  await updateTaxonomy("occasions", req.params.id, req.body);
   res.json({ message: "Occasion updated" });
 });
 

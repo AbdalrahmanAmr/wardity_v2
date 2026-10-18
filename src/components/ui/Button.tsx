@@ -20,7 +20,8 @@ const variantClasses: Record<ButtonVariant, string> = {
   danger:
     "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-sm hover:shadow-md",
   ghost: "text-gray-600 hover:bg-gray-100 active:bg-gray-200",
-  outline: "border border-gray-300 text-gray-700 hover:bg-gray-50 active:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800",
+  outline:
+    "border border-gray-300 text-gray-700 hover:bg-gray-50 active:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
@@ -44,6 +45,7 @@ export const Button: FC<ButtonProps> = ({
     <button
       className={`
         inline-flex items-center justify-center gap-2 font-medium rounded-lg
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2
         transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed
         ${variantClasses[variant]}
         ${sizeClasses[size]}
@@ -64,4 +66,3 @@ export const Button: FC<ButtonProps> = ({
     </button>
   );
 };
-

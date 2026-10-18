@@ -29,10 +29,11 @@ export function formatDateTime(date: string | Date): string {
  * Format a number as currency
  */
 export function formatCurrency(
-  amount: number,
+  amount: number | null | undefined,
   currency = "EGP",
   locale = "en-US"
 ): string {
+  if (amount == null) return "—";
   return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
