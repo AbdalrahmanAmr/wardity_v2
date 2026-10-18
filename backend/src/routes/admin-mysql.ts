@@ -22,11 +22,19 @@ import { validate, createProductSchema, updateProductSchema } from "../utils/val
 import { getEffectiveSale, ProductSaleFields } from "../utils/productPricing.js";
 import { readContactSettings, validateContactSettings, writeContactSettings } from "../utils/contactSettings.js";
 import { dbGet, dbAll, dbRun, dbTransaction } from "../database/mysql.js";
-import type { ExecuteValues } from "mysql2/promise";
+import type { ExecuteValues, RowDataPacket } from "mysql2/promise";
 
 export const adminRouterMySQL = Router();
 
 type ProductRow = ProductSaleFields & Record<string, unknown>;
+type DeliveryLocationRecord = {
+  id: string;
+  name: string;
+  nameAr?: string | null;
+  deliveryFee?: number | string | null;
+  requiresQuote?: boolean | number | null;
+  isActive?: boolean | number | null;
+};
 
 adminRouterMySQL.use(authenticateToken);
 adminRouterMySQL.use(requireAdmin);
@@ -48,8 +56,10 @@ function deliveryLocationValues(input: DeliveryLocationInput) {
 }
 
 adminRouterMySQL.get("/delivery-locations", async (_req, res: Response) => {
-  const locations = await dbAll("SELECT id, name, name_ar AS nameAr, delivery_fee AS deliveryFee, requires_quote AS requiresQuote, is_active AS isActive FROM delivery_locations ORDER BY name");
-  res.json({ data: locations.map((location: any) => ({ ...location, requiresQuote: Boolean(location.requiresQuote), isActive: Boolean(location.isActive) })) });
+  const locations = await dbAll<DeliveryLocationRecord>(
+    "SELECT id, name, name_ar AS nameAr, delivery_fee AS deliveryFee, requires_quote AS requiresQuote, is_active AS isActive FROM delivery_locations ORDER BY name",
+  );
+  res.json({ data: locations.map((location) => ({ ...location, requiresQuote: Boolean(location.requiresQuote), isActive: Boolean(location.isActive) })) });
 });
 adminRouterMySQL.post("/delivery-locations", async (req, res: Response) => {
   const location = deliveryLocationValues(req.body);
@@ -281,6 +291,8 @@ adminRouterMySQL.get("/products", async (_req, res: Response) => {
   const rows = await dbAll<ProductRow>("SELECT * FROM products ORDER BY created_at DESC");
   const products = await Promise.all(rows.map(async (product) => ({
     ...product,
+    nameAr:          product.name_ar,
+    descriptionAr:   product.description_ar,
     salePrice:       product.sale_price,
     isOnSale:        getEffectiveSale(product).isOnSale,
     discountPercent: getEffectiveSale(product).discountPercent,
@@ -382,8 +394,8 @@ adminRouterMySQL.post("/products/bulk", async (req, res: Response) => {
         if (action === "out_of_stock") {
           await conn.execute("UPDATE products SET status = 'Out of stock', updated_at = NOW() WHERE id = ?", [id]);
         } else {
-          const [rows] = await conn.execute<any[]>("SELECT price FROM products WHERE id = ?", [id]);
-          const product = (rows as any[])[0] as { price: number } | undefined;
+          const [rows] = await conn.execute<RowDataPacket[]>("SELECT price FROM products WHERE id = ?", [id]);
+          const product = (rows as Array<{ price: number }>)[0];
           if (!product) throw new Error("One or more selected products could not be found.");
           const productSalePrice = Number.isFinite(salePercent)
             ? Number((product.price * (1 - Number(salePercent) / 100)).toFixed(2))
@@ -480,6 +492,30 @@ adminRouterMySQL.delete("/carousel/:id", async (req, res: Response) => {
 });
 
 // ── Categories ─────────────────────────────────────────────────────────────
+adminRouterMySQL.get("/categories", async (_req, res: Response) => {
+  const categories = await dbAll<{
+    id: string; slug: string; name: string; nameAr?: string | null;
+    imageType: string; image: string | null; bgColor: string | null;
+    sortOrder: number; isActive: boolean | number; productCount: number;
+  }>(
+    `SELECT c.id, c.slug, c.name, c.name_ar AS nameAr,
+            c.image_type AS imageType, c.image, c.bg_color AS bgColor,
+            c.sort_order AS sortOrder, c.is_active AS isActive,
+            COUNT(p.id) AS productCount
+       FROM categories c
+       LEFT JOIN products p ON p.category_id = c.id
+      GROUP BY c.id, c.slug, c.name, c.name_ar, c.image_type, c.image,
+               c.bg_color, c.sort_order, c.is_active
+      ORDER BY c.sort_order, c.name`,
+  );
+  res.json(categories.map((category) => ({
+    ...category,
+    isActive: Boolean(category.isActive),
+    bgColor: category.bgColor || undefined,
+    nameAr: category.nameAr || undefined,
+  })));
+});
+
 adminRouterMySQL.post("/categories", async (req, res: Response) => {
   const { name, slug: requestedSlug, image_type, imageType, bg_color, bgColor, image, name_ar, nameAr, sort_order, sortOrder, is_active, isActive } = req.body;
   if (!name?.trim()) { res.status(400).json({ message: "Category name is required." }); return; }
@@ -509,6 +545,29 @@ adminRouterMySQL.delete("/categories/:id", async (req, res: Response) => {
 });
 
 // ── Occasions ──────────────────────────────────────────────────────────────
+adminRouterMySQL.get("/occasions", async (_req, res: Response) => {
+  const occasions = await dbAll<{
+    id: string; slug: string; name: string; nameAr?: string | null;
+    imageType: string; image: string | null; sortOrder: number;
+    isActive: boolean | number; productCount: number;
+  }>(
+    `SELECT o.id, o.slug, o.name, o.name_ar AS nameAr,
+            o.image_type AS imageType, o.image,
+            o.sort_order AS sortOrder, o.is_active AS isActive,
+            COUNT(p.id) AS productCount
+       FROM occasions o
+       LEFT JOIN products p ON p.occasion_id = o.id
+      GROUP BY o.id, o.slug, o.name, o.name_ar, o.image_type, o.image,
+               o.sort_order, o.is_active
+      ORDER BY o.sort_order, o.name`,
+  );
+  res.json(occasions.map((occasion) => ({
+    ...occasion,
+    isActive: Boolean(occasion.isActive),
+    nameAr: occasion.nameAr || undefined,
+  })));
+});
+
 adminRouterMySQL.post("/occasions", async (req, res: Response) => {
   const { name, slug: requestedSlug, image_type, imageType, image, name_ar, nameAr, sort_order, sortOrder, is_active, isActive } = req.body;
   if (!name?.trim()) { res.status(400).json({ message: "Occasion name is required." }); return; }

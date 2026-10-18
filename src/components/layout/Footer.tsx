@@ -22,6 +22,9 @@ const fallbackShopLinks = [
   { label: "Plants", path: "/categories/plants" },
 ];
 
+const containsNonAscii = (value: string) =>
+  Array.from(value).some((char) => char.charCodeAt(0) > 127);
+
 export const Footer: FC = () => {
   const { openSettings } = useConsent();
   const { t, toggleLanguage, language } = useLanguage();
@@ -80,7 +83,7 @@ export const Footer: FC = () => {
                     <span dir="auto">
                       {language === "ar" &&
                       link.label &&
-                      !/[^\u0000-\u007f]/.test(link.label) ? (
+                      !containsNonAscii(link.label) ? (
                         <span lang="en" dir="ltr">
                           {link.label}
                         </span>

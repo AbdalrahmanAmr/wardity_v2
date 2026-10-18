@@ -14,7 +14,7 @@ Create a `.env` file in the `backend` directory:
 ```env
 PORT=3001
 NODE_ENV=development
-JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+JWT_SECRET=
 JWT_EXPIRES_IN=7d
 DB_DRIVER=mysql
 MYSQL_HOST=127.0.0.1
@@ -23,6 +23,12 @@ MYSQL_USER=root
 MYSQL_PASSWORD=your-local-password
 MYSQL_DATABASE=wardity_import_nofk_20261016
 CORS_ORIGIN=http://localhost:5173
+```
+
+Generate a unique signing secret and set it as `JWT_SECRET` (at least 32 bytes):
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 ```
 
 ## 3. Seed the Database

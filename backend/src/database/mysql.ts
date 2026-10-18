@@ -13,6 +13,7 @@
  */
 
 import mysql, { ExecuteValues, Pool, PoolConnection, ResultSetHeader } from "mysql2/promise";
+import { runtimeConfig } from "../config/runtime.js";
 
 // ─── Config (from env) ────────────────────────────────────────────────────
 
@@ -24,8 +25,8 @@ function requireEnv(key: string): string {
 
 export function getMySQLConfig() {
   return {
-    host:     process.env.MYSQL_HOST     || "127.0.0.1",
-    port:     parseInt(process.env.MYSQL_PORT || "3306", 10),
+    host:     runtimeConfig.mysqlHost,
+    port:     runtimeConfig.mysqlPort,
     user:     requireEnv("MYSQL_USER"),
     password: requireEnv("MYSQL_PASSWORD"),
     database: requireEnv("MYSQL_DATABASE"),
@@ -46,13 +47,13 @@ export async function initMySQL(): Promise<void> {
   _pool = mysql.createPool({
     ...config,
     waitForConnections: true,
-    connectionLimit:    10,
-    queueLimit:         0,
+    connectionLimit:    runtimeConfig.mysqlConnectionLimit,
+    queueLimit:         runtimeConfig.mysqlQueueLimit,
     // Return dates as strings so they match the TEXT format used by SQLite
     dateStrings:        true,
     // Needed for multi-statement exec()
     multipleStatements: true,
-    timezone:           "Z",
+    timezone:           runtimeConfig.mysqlTimezone,
   });
   // Verify connectivity
   const conn = await _pool.getConnection();

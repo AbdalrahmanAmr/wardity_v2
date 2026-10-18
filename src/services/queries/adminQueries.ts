@@ -34,6 +34,8 @@ export interface AdminOrder {
 export const adminQueryKeys = {
   all: ["admin"] as const,
   products: () => [...adminQueryKeys.all, "products"] as const,
+  categories: () => [...adminQueryKeys.all, "categories"] as const,
+  occasions: () => [...adminQueryKeys.all, "occasions"] as const,
   users: () => [...adminQueryKeys.all, "users"] as const,
   orders: () => [...adminQueryKeys.all, "orders"] as const,
 };
@@ -74,7 +76,7 @@ export function useUpdateOrder() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const response = await api.patch<{ data: any }>(`/admin/orders/${id}`, { status });
+      const response = await api.patch<{ data: unknown }>(`/admin/orders/${id}`, { status });
       return response.data;
     },
     onSuccess: () => {
@@ -96,7 +98,7 @@ export function useCreateProduct() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Product>) => {
-      const response = await api.post<{ data: any }>("/admin/products", data);
+      const response = await api.post<{ data: unknown }>("/admin/products", data);
       return response.data;
     },
     onSuccess: () => {
@@ -110,7 +112,7 @@ export function useUpdateProduct() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<Product> & { id: string }) => {
-      const response = await api.patch<{ data: any }>(`/admin/products/${id}`, data);
+      const response = await api.patch<{ data: unknown }>(`/admin/products/${id}`, data);
       return response.data;
     },
     onSuccess: () => {
@@ -124,7 +126,7 @@ export function useDeleteProduct() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.delete<{ data: any }>(`/admin/products/${id}`);
+      const response = await api.delete<{ data: unknown }>(`/admin/products/${id}`);
       return response.data;
     },
     onSuccess: () => {
@@ -147,15 +149,23 @@ export function useBulkProductAction() {
 }
 
 // Categories
+export function useAdminCategories() {
+  return useQuery({
+    queryKey: adminQueryKeys.categories(),
+    queryFn: () => api.get<Category[]>("/admin/categories"),
+  });
+}
+
 export function useCreateCategory() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Category>) => {
-      const response = await api.post<{ data: any }>("/admin/categories", data);
+      const response = await api.post<{ data: unknown }>("/admin/categories", data);
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: categoryQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.categories() });
     },
   });
 }
@@ -164,11 +174,12 @@ export function useUpdateCategory() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<Category> & { id: string }) => {
-      const response = await api.patch<{ data: any }>(`/admin/categories/${id}`, data);
+      const response = await api.patch<{ data: unknown }>(`/admin/categories/${id}`, data);
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: categoryQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.categories() });
     },
   });
 }
@@ -177,25 +188,53 @@ export function useDeleteCategory() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.delete<{ data: any }>(`/admin/categories/${id}`);
+      const response = await api.delete<{ data: unknown }>(`/admin/categories/${id}`);
       return response.data;
     },
-    onSuccess: () => {
+    onMutate: async (id) => {
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: categoryQueryKeys.all }),
+        queryClient.cancelQueries({ queryKey: adminQueryKeys.categories() }),
+      ]);
+      const previousCategories = queryClient.getQueriesData<Category[]>({ queryKey: categoryQueryKeys.lists() });
+      const previousAdminCategories = queryClient.getQueriesData<Category[]>({ queryKey: adminQueryKeys.categories() });
+      const removeCategory = (categories: Category[] | undefined) =>
+        categories?.filter((category) => category.id !== id);
+
+      queryClient.setQueriesData<Category[]>({ queryKey: categoryQueryKeys.lists() }, removeCategory);
+      queryClient.setQueriesData<Category[]>({ queryKey: adminQueryKeys.categories() }, removeCategory);
+
+      return { previousCategories, previousAdminCategories };
+    },
+    onError: (_error, _id, context) => {
+      context?.previousCategories.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
+      context?.previousAdminCategories.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: categoryQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.categories() });
     },
   });
 }
 
 // Occasions
+export function useAdminOccasions() {
+  return useQuery({
+    queryKey: adminQueryKeys.occasions(),
+    queryFn: () => api.get<Occasion[]>("/admin/occasions"),
+  });
+}
+
 export function useCreateOccasion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Occasion>) => {
-      const response = await api.post<{ data: any }>("/admin/occasions", data);
+      const response = await api.post<{ data: unknown }>("/admin/occasions", data);
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: occasionQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.occasions() });
     },
   });
 }
@@ -204,11 +243,12 @@ export function useUpdateOccasion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<Occasion> & { id: string }) => {
-      const response = await api.patch<{ data: any }>(`/admin/occasions/${id}`, data);
+      const response = await api.patch<{ data: unknown }>(`/admin/occasions/${id}`, data);
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: occasionQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.occasions() });
     },
   });
 }
@@ -217,11 +257,31 @@ export function useDeleteOccasion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.delete<{ data: any }>(`/admin/occasions/${id}`);
+      const response = await api.delete<{ data: unknown }>(`/admin/occasions/${id}`);
       return response.data;
     },
-    onSuccess: () => {
+    onMutate: async (id) => {
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: occasionQueryKeys.all }),
+        queryClient.cancelQueries({ queryKey: adminQueryKeys.occasions() }),
+      ]);
+      const previousOccasions = queryClient.getQueriesData<Occasion[]>({ queryKey: occasionQueryKeys.lists() });
+      const previousAdminOccasions = queryClient.getQueriesData<Occasion[]>({ queryKey: adminQueryKeys.occasions() });
+      const removeOccasion = (occasions: Occasion[] | undefined) =>
+        occasions?.filter((occasion) => occasion.id !== id);
+
+      queryClient.setQueriesData<Occasion[]>({ queryKey: occasionQueryKeys.lists() }, removeOccasion);
+      queryClient.setQueriesData<Occasion[]>({ queryKey: adminQueryKeys.occasions() }, removeOccasion);
+
+      return { previousOccasions, previousAdminOccasions };
+    },
+    onError: (_error, _id, context) => {
+      context?.previousOccasions.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
+      context?.previousAdminOccasions.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: occasionQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.occasions() });
     },
   });
 }

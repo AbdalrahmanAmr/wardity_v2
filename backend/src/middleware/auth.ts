@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { getJwtSecret } from "../utils/jwt.js";
+import { dbGet } from "../database/mysql.js";
 
 export interface AuthRequest extends Request {
   userId?: string;
@@ -27,13 +29,14 @@ export function authenticateToken(
     return;
   }
 
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    throw new Error("JWT_SECRET is not configured");
-  }
-
+  const secret = getJwtSecret();
   try {
-    const decoded = jwt.verify(token, secret) as { userId: string; email: string; name: string; role: string };
+    const decoded = jwt.verify(token, secret) as {
+      userId: string;
+      email: string;
+      name: string;
+      role: string;
+    };
     req.userId = decoded.userId;
     req.user = {
       id: decoded.userId,
@@ -50,12 +53,24 @@ export function authenticateToken(
   }
 }
 
-export function requireAdmin(
+export async function requireAdmin(
   req: AuthRequest,
   res: Response,
   next: NextFunction
-): void {
-  if (req.user?.role !== "admin") {
+): Promise<void> {
+  if (!req.userId) {
+    res.status(403).json({
+      message: "Admin access required",
+      status: 403,
+    });
+    return;
+  }
+
+  const user = await dbGet<{ role: string }>(
+    "SELECT role FROM users WHERE id = ?",
+    [req.userId],
+  );
+  if (user?.role !== "admin") {
     res.status(403).json({
       message: "Admin access required",
       status: 403,
@@ -64,4 +79,3 @@ export function requireAdmin(
   }
   next();
 }
-

@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { runtimeConfig } from "../config/runtime.js";
 
 interface CapiEvent {
   eventName: string;
@@ -43,7 +44,7 @@ export function sendMetaEvent(event: CapiEvent): void {
     ...(process.env.META_TEST_EVENT_CODE ? { test_event_code: process.env.META_TEST_EVENT_CODE } : {}),
   };
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 3000);
+  const timeout = setTimeout(() => controller.abort(), runtimeConfig.metaCapiTimeoutMs);
   void fetch(`https://graph.facebook.com/${process.env.META_GRAPH_VERSION || "v21.0"}/${pixelId}/events`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },

@@ -9,6 +9,7 @@ interface EnvConfig {
   isProduction: boolean;
   metaPixelId?: string;
   ga4Id?: string;
+  facebookUrl: string;
 }
 
 function getEnvConfig(): EnvConfig {
@@ -21,6 +22,9 @@ function getEnvConfig(): EnvConfig {
     isProduction: mode === "production",
     metaPixelId: import.meta.env.VITE_META_PIXEL_ID || undefined,
     ga4Id: import.meta.env.VITE_GA4_ID || undefined,
+    facebookUrl:
+      import.meta.env.VITE_FACEBOOK_URL ||
+      "https://www.facebook.com/share/1Dk2Ft3DLL/",
   };
 }
 

@@ -1,5 +1,6 @@
 import { FC, useState } from "react";
 import { Link } from "react-router-dom";
+import { FaFacebookF } from "react-icons/fa";
 import {
   CheckCircleIcon,
   ChevronRightIcon,
@@ -25,6 +26,7 @@ import type { Occasion, Category } from "@/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { isBestSellerProduct } from "@/types/product";
 import { api } from "@/services/api";
+import { env } from "@/config/env";
 
 interface NewsletterFeedback {
   type: "success" | "error";
@@ -139,6 +141,8 @@ export const Home: FC = () => {
 
           <Carousel
             ariaLabel="Occasions"
+            wrapAt={7}
+            wrapClassName="grid-cols-[repeat(auto-fit,minmax(9rem,1fr))]"
             showDots
             className="-mx-4 px-4 md:mx-0 md:px-0"
             gapClassName="gap-2 md:gap-4"
@@ -293,11 +297,10 @@ export const Home: FC = () => {
             <div className="order-2 md:order-1">
               <div className="relative">
                 <img
-                  src="https://images.unsplash.com/photo-1607082349566-187342175e2f?w=600&h=400&fit=crop"
+                  src="/delv.jpeg"
                   alt={language === "ar" ? "توصيل ورديتي" : "Wardity Delivery"}
                   className="rounded-2xl shadow-lg w-full"
                 />
-                <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-primary/10 rounded-full" />
                 <div className="absolute -top-4 -left-4 w-16 h-16 bg-primary/5 rounded-full" />
               </div>
             </div>
@@ -419,6 +422,17 @@ export const Home: FC = () => {
               </button>
             </div>
           )}
+          <a
+            href={env.facebookUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#1877F2] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#166FE5] focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
+          >
+            <FaFacebookF aria-hidden="true" />
+            {language === "ar"
+              ? "تابعوا ورديتي على فيسبوك"
+              : "Follow Wardity on Facebook"}
+          </a>
         </div>
       </section>
     </div>

@@ -24,9 +24,9 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  register: (email: string, password: string, name: string, phone: string) => Promise<void>;
   logout: () => void;
-  updateUser: (userData: Partial<User>) => void;
+  updateUser: (userData: Partial<User>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -56,7 +56,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const response = await api.get<ApiResponse<User>>("/auth/me");
           setUser(response.data);
           setStoredUser(response.data);
-        } catch (error) {
+        } catch {
           // Token is invalid, clear storage
           setStoredToken(null);
           setStoredUser(null);
@@ -83,8 +83,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(userData);
         setStoredUser(userData);
         setStoredToken(token);
-      } catch (error) {
-        throw error;
       } finally {
         setIsLoading(false);
       }
@@ -93,21 +91,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   );
 
   const register = useCallback(
-    async (email: string, password: string, name: string) => {
+    async (email: string, password: string, name: string, phone: string) => {
       setIsLoading(true);
       try {
         const response = await api.post<
           ApiResponse<{ user: User; token: string }>,
-          { email: string; password: string; name: string }
-        >("/auth/register", { email, password, name });
+          { email: string; password: string; name: string; phone: string }
+        >("/auth/register", { email, password, name, phone });
 
         const { user: userData, token } = response.data;
 
         setUser(userData);
         setStoredUser(userData);
         setStoredToken(token);
-      } catch (error) {
-        throw error;
       } finally {
         setIsLoading(false);
       }

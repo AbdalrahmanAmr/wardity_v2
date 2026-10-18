@@ -3,10 +3,12 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBlock } from "@/components/ui/ErrorBlock";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { getErrorMessage } from "@/utils/errorMessage";
 
 export const Register: FC = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -31,10 +33,10 @@ export const Register: FC = () => {
     setIsSubmitting(true);
 
     try {
-      await register(email, password, name);
+      await register(email, password, name, phone);
       navigate("/");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Registration failed. Please try again.");
+      setError(getErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }
@@ -83,6 +85,22 @@ export const Register: FC = () => {
                 required
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
                 placeholder="your@email.com"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                Phone
+              </label>
+              <input
+                id="phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+                autoComplete="tel"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                placeholder="Phone number"
               />
             </div>
 
@@ -145,4 +163,3 @@ export const Register: FC = () => {
     </div>
   );
 };
-

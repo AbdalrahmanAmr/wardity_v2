@@ -33,7 +33,7 @@ export const Profile: FC = () => {
     setIsSubmitting(true);
 
     try {
-      updateUser(formData);
+      await updateUser(formData);
       setIsEditing(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update profile");
@@ -187,4 +187,3 @@ export const Profile: FC = () => {
     </div>
   );
 };
-

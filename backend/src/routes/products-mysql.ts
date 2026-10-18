@@ -17,6 +17,7 @@ import {
 } from "../utils/productPricing.js";
 import { dbGet, dbAll } from "../database/mysql.js";
 import type { ExecuteValues } from "mysql2/promise";
+import { runtimeConfig } from "../config/runtime.js";
 
 export const productsRouterMySQL = Router();
 
@@ -54,7 +55,7 @@ function formatProduct(product: ProductRow, language = "en") {
 productsRouterMySQL.get("/", async (req, res: Response) => {
   const {
     page = "1",
-    pageSize = "20",
+    pageSize = String(runtimeConfig.defaultProductPageSize),
     category,
     occasion,
     search,

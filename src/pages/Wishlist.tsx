@@ -2,12 +2,14 @@ import { FC } from "react";
 import { Link } from "react-router-dom";
 import { useWishlist as useWishlistQuery } from "@/services/queries/wishlistQueries";
 import { useWishlist as useWishlistContext } from "@/contexts/WishlistContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { ProductCard } from "@/components/features";
 import { LoadingSpinner, ErrorBlock } from "@/components/ui";
 import { HeartIcon } from "@heroicons/react/24/solid";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 
 export const Wishlist: FC = () => {
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
   // Try React Query first (API-based), fallback to context (local storage)
   const {
     data: wishlistData,
@@ -15,7 +17,7 @@ export const Wishlist: FC = () => {
     isError,
     error,
     refetch,
-  } = useWishlistQuery();
+  } = useWishlistQuery(isAuthenticated && !isAuthLoading);
   const { wishlist: contextWishlist } = useWishlistContext();
 
   // Determine which wishlist to use:
@@ -31,7 +33,7 @@ export const Wishlist: FC = () => {
 
   // ========== CONDITIONAL RENDERS ==========
   // Show loading only if API is loading AND we don't have context data
-  if (isLoading && !hasContextData) {
+  if (isAuthLoading || (isLoading && !hasContextData)) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
         <div className="container mx-auto px-4">

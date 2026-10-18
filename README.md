@@ -255,7 +255,7 @@ Contact channel defaults, visibility switches, and channel setup notes are docum
    ```env
    # Backend (backend/.env)
    PORT=3000
-   JWT_SECRET=your-super-secret-jwt-key-change-in-production
+   JWT_SECRET=
    NODE_ENV=development
    ```
 

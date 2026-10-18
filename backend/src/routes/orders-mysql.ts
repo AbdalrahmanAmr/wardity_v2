@@ -276,17 +276,6 @@ ordersRouterMySQL.post("/", async (req: AuthRequest, res: Response) => {
 
   const orderId = generateId();
   let total: number | null = null;
-  let createdOrder:
-    | {
-        id: string;
-        status: string;
-        total: number;
-        shippingAddress: string;
-        paymentMethod: string | null;
-        createdAt: string;
-        updatedAt: string;
-      }
-    | undefined;
   let orderItems: Array<{
     id: string;
     quantity: number;
@@ -407,7 +396,7 @@ ordersRouterMySQL.post("/", async (req: AuthRequest, res: Response) => {
     return;
   }
 
-  createdOrder = await dbGet<{
+  const createdOrder = await dbGet<{
     id: string;
     status: string;
     total: number;

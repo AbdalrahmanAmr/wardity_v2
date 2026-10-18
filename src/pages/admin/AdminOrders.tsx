@@ -18,8 +18,12 @@ export const AdminOrders: FC = () => {
     setUpdateError(null);
     try {
       await updateOrder.mutateAsync({ id, status: newStatus });
-    } catch (err: any) {
-      setUpdateError(err.response?.data?.message || err.message || "Failed to update order status.");
+    } catch (err: unknown) {
+      const message =
+        typeof err === "object" && err !== null && "response" in err
+          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+          : undefined;
+      setUpdateError(message || (err instanceof Error ? err.message : "Failed to update order status."));
     }
   };
   const resolveShippingQuote = async (id: string) => {

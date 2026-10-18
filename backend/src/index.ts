@@ -9,23 +9,22 @@ import { settingsRouter } from "./routes/settings.js";
 import { newsletterRouter } from "./routes/newsletter.js";
 import { deliveryLocationsRouter } from "./routes/delivery-locations.js";
 import { UPLOADS_DIR } from "./utils/uploads.js";
+import { validateJwtSecret } from "./utils/jwt.js";
+import { runtimeConfig } from "./config/runtime.js";
 import { mkdirSync } from "fs";
 
 // ── Database driver selection ──────────────────────────────────────────────
-const DB_DRIVER = (process.env.DB_DRIVER || "").toLowerCase();
-if (DB_DRIVER !== "mysql") {
+if (runtimeConfig.databaseDriver !== "mysql") {
   throw new Error("DB_DRIVER must be set to mysql");
 }
 
 const app  = express();
-const PORT = process.env.PORT || 3001;
-const configuredOrigins = (process.env.CORS_ORIGIN || "")
-  .split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
-const isDevelopment = process.env.NODE_ENV !== "production";
+const configuredOrigins = runtimeConfig.corsOrigins;
+const isDevelopment = runtimeConfig.nodeEnv !== "production";
 
 async function bootstrap() {
+  validateJwtSecret();
+
   // ── Initialise database ──────────────────────────────────────────────────
   const { initMySQL }               = await import("./database/mysql.js");
   const { initializeDatabaseMySQL } = await import("./database/init-mysql.js");
@@ -42,7 +41,7 @@ async function bootstrap() {
         const isAllowedDev =
           isDevelopment &&
           !!origin &&
-          /^http:\/\/(localhost|127\.0\.0\.1):51(7[3-9]|80)$/.test(origin);
+          runtimeConfig.developmentCorsOrigins.includes(origin);
         if (!origin || configuredOrigins.includes(origin) || isAllowedDev) {
           callback(null, true);
           return;
@@ -52,8 +51,8 @@ async function bootstrap() {
       credentials: true,
     }),
   );
-  app.use(express.json({ limit: "100kb" }));
-  app.use(express.urlencoded({ extended: true, limit: "100kb" }));
+  app.use(express.json({ limit: runtimeConfig.requestBodyLimit }));
+  app.use(express.urlencoded({ extended: true, limit: runtimeConfig.requestBodyLimit }));
   app.use("/api/track", trackingRouter);
   app.use("/api/settings", settingsRouter);
   app.use("/api/newsletter", newsletterRouter);
@@ -71,7 +70,7 @@ async function bootstrap() {
 
   // ── Health check ───────────────────────────────────────────────────────
   app.get("/health", (_req, res) => {
-    res.json({ status: "ok", driver: DB_DRIVER, timestamp: new Date().toISOString() });
+    res.json({ status: "ok", driver: runtimeConfig.databaseDriver, timestamp: new Date().toISOString() });
   });
 
   const { authRouterMySQL }       = await import("./routes/auth-mysql.js");
@@ -96,9 +95,9 @@ async function bootstrap() {
   app.use(notFoundHandler);
   app.use(errorHandler);
 
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`📊 Health check: http://localhost:${PORT}/health`);
+  app.listen(runtimeConfig.port, () => {
+    console.log(`🚀 Server listening on port ${runtimeConfig.port}`);
+    console.log(`📊 Health check: /health`);
     console.log(`📁 Uploads: ${UPLOADS_DIR}`);
   });
 }

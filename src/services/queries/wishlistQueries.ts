@@ -18,22 +18,22 @@ export const wishlistQueryKeys = {
 /**
  * Fetch current wishlist
  */
-export function useWishlist() {
+export function useWishlist(enabled = true) {
   return useQuery({
     queryKey: wishlistQueryKeys.items(),
     queryFn: async () => {
       try {
         return await api.get<Product[]>("/wishlist");
       } catch (error) {
-        // If API is not available (404, network error, etc.), return empty array
-        // Component will fallback to context-based wishlist
+        // The local wishlist remains available when the authenticated API cannot be used.
         const apiError = error as { code?: number; message?: string };
-        if (apiError.code === 404 || apiError.code === 0) {
+        if ([0, 401, 403, 404].includes(apiError.code ?? -1)) {
           return [] as Product[];
         }
         throw error; // Re-throw other errors
       }
     },
+    enabled,
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: false, // Don't retry on failure - fallback to context
     refetchOnWindowFocus: false, // Don't refetch on window focus
@@ -116,4 +116,3 @@ export function useToggleWishlist() {
     },
   });
 }
-

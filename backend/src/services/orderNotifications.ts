@@ -1,3 +1,5 @@
+import { runtimeConfig } from "../config/runtime.js";
+
 interface OrderNotificationItem {
   name: string;
   sku?: string | null;
@@ -58,7 +60,7 @@ const sendJson = async (
   headers: Record<string, string> = {},
 ) => {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 5000);
+  const timeout = setTimeout(() => controller.abort(), runtimeConfig.orderNotificationTimeoutMs);
 
   try {
     const response = await fetch(url, {

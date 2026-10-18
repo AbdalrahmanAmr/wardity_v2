@@ -35,11 +35,20 @@ Create `backend/.env`:
 ```env
 PORT=3001
 NODE_ENV=development
-JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+JWT_SECRET=
 JWT_EXPIRES_IN=7d
 DATABASE_PATH=./data/wardity.db
 CORS_ORIGIN=http://localhost:5173
 ```
+
+Generate a signing secret with:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+
+Set the generated value as `JWT_SECRET` before starting the server. The server
+will refuse to start if the secret is missing, too short, or a known placeholder.
 
 ### 3. Seed Database
 
@@ -208,4 +217,3 @@ curl -X POST http://localhost:3001/api/auth/login \
 ---
 
 **Your backend is ready to use!** 🚀
-

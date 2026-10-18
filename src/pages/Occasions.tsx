@@ -1,5 +1,4 @@
 import { FC } from "react";
-import { Link } from "react-router-dom";
 import { useOccasions } from "@/services/queries/categoryQueries";
 import { OccasionCard } from "@/components/features";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
@@ -39,15 +38,9 @@ export const Occasions: FC = () => {
         </div>
 
         {occasions && occasions.length > 0 ? (
-          <div className="flex overflow-x-auto gap-2 md:gap-4 pb-4 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-7">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {occasions.map((occasion) => (
-              <Link
-                key={occasion.name}
-                to={`/occasions/${occasion.name.toLowerCase().replace(/\s+/g, "-")}`}
-                className="flex-shrink-0 w-24 md:w-auto"
-              >
-                <OccasionCard occasion={occasion} />
-              </Link>
+              <OccasionCard key={occasion.id ?? occasion.slug ?? occasion.name} occasion={occasion} />
             ))}
           </div>
         ) : (
@@ -59,4 +52,3 @@ export const Occasions: FC = () => {
     </div>
   );
 };
-

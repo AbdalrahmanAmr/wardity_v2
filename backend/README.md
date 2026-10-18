@@ -45,7 +45,7 @@ cp .env.example .env
 3. Update `.env` with your configuration (optional):
 ```env
 PORT=3001
-JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+JWT_SECRET=
 DB_DRIVER=mysql
 MYSQL_HOST=127.0.0.1
 MYSQL_PORT=3306
@@ -54,6 +54,15 @@ MYSQL_PASSWORD=your-local-password
 MYSQL_DATABASE=wardity_import_nofk_20261016
 CORS_ORIGIN=http://localhost:5173
 ```
+
+Generate a signing secret with:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+
+Set the generated value as `JWT_SECRET` before starting the server. The server
+will refuse to start if the secret is missing, too short, or a known placeholder.
 
 4. Start the development server:
 ```bash

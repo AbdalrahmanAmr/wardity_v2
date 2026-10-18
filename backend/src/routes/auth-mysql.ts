@@ -20,7 +20,7 @@ export const authRouterMySQL = Router();
 
 // ── POST /api/auth/register ────────────────────────────────────────────────
 authRouterMySQL.post("/register", async (req, res: Response) => {
-  const { email, password, name } = validate(registerSchema, req.body);
+  const { email, password, name, phone } = validate(registerSchema, req.body);
 
   const existingUser = await dbGet<{ id: string }>(
     "SELECT id FROM users WHERE email = ?", [email],
@@ -34,13 +34,13 @@ authRouterMySQL.post("/register", async (req, res: Response) => {
   const userId = generateId();
   const role = "customer";
   await dbRun(
-    "INSERT INTO users (id, email, name, password_hash, role) VALUES (?, ?, ?, ?, ?)",
-    [userId, email, name, passwordHash, role],
+    "INSERT INTO users (id, email, name, password_hash, phone, role) VALUES (?, ?, ?, ?, ?, ?)",
+    [userId, email, name, passwordHash, phone, role],
   );
 
   const token = generateToken({ userId, email, name, role });
   res.status(201).json({
-    data: { user: { id: userId, email, name }, token },
+    data: { user: { id: userId, email, name, phone }, token },
     message: "User registered successfully",
     status: 201,
   });
@@ -51,9 +51,9 @@ authRouterMySQL.post("/login", async (req, res: Response) => {
   const { email, password } = validate(loginSchema, req.body);
 
   const user = await dbGet<{
-    id: string; email: string; name: string; password_hash: string; role: string;
+    id: string; email: string; name: string; password_hash: string; phone: string | null; role: string;
   }>(
-    "SELECT id, email, name, password_hash, role FROM users WHERE email = ?", [email],
+    "SELECT id, email, name, password_hash, phone, role FROM users WHERE email = ?", [email],
   );
   if (!user) {
     res.status(401).json({ message: "Invalid email or password", status: 401 });
@@ -68,7 +68,13 @@ authRouterMySQL.post("/login", async (req, res: Response) => {
 
   const token = generateToken({ userId: user.id, email: user.email, name: user.name, role: user.role });
   res.json({
-    data: { user: { id: user.id, email: user.email, name: user.name, role: user.role }, token },
+    data: {
+      user: {
+        id: user.id, email: user.email, name: user.name,
+        phone: user.phone || undefined, role: user.role,
+      },
+      token,
+    },
     message: "Login successful",
     status: 200,
   });
