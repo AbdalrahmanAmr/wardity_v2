@@ -1,6 +1,8 @@
 # Security and Environment Setup Actions
 
 Use this checklist when configuring a local or production Wardity deployment.
+For server provisioning and SSH commands, see
+[SERVER_SETUP.md](./SERVER_SETUP.md).
 
 ## 1. Configure the backend
 

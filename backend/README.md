@@ -28,7 +28,8 @@ Backend API server for the Wardity e-commerce platform built with Node.js, Expre
 
 ### Prerequisites
 
-- Node.js 18+ and npm
+- Node.js 20+ and npm
+- MySQL 8.0+
 
 ### Installation
 
@@ -42,10 +43,11 @@ npm install
 cp .env.example .env
 ```
 
-3. Update `.env` with your configuration (optional):
+3. Update `.env` with your configuration:
 ```env
 PORT=3001
-JWT_SECRET=
+NODE_ENV=development
+JWT_SECRET=<generated-secret>
 DB_DRIVER=mysql
 MYSQL_HOST=127.0.0.1
 MYSQL_PORT=3306
@@ -166,6 +168,10 @@ backend/
 
 ## Production Deployment
 
+The API is deployed as a long-running Node.js process. MySQL, persistent
+uploads, Nginx (or an equivalent reverse proxy), and HTTPS are required for a
+production installation.
+
 1. Build the project:
 ```bash
 npm run build
@@ -178,9 +184,14 @@ npm run build
 npm start
 ```
 
+See the repository-level [SERVER_SETUP.md](../SERVER_SETUP.md) for the
+complete SSH deployment procedure and [SERVER_REQUIREMENTS.md](../SERVER_REQUIREMENTS.md)
+for the minimum server specification.
+
 ## Notes
 
-- The backend requires MySQL and does not create or seed catalog data during startup
+- The backend requires MySQL and creates the required tables during startup; it
+  does not seed catalog data automatically
 - JWT tokens expire after 7 days by default (configurable via `JWT_EXPIRES_IN`)
 - CORS is configured to allow requests from the frontend origin
 

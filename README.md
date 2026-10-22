@@ -1,6 +1,13 @@
 # 🛍️ Wardity
 
-> A modern, full-stack e-commerce platform built with React 19, TypeScript, and Express. Featuring product browsing, shopping cart, wishlist, order management, and more.
+> A modern, full-stack e-commerce platform built with React, TypeScript,
+> Express, and MySQL. Wardity provides product browsing, shopping cart,
+> wishlist, order management, admin catalog tools, delivery locations, and
+> bilingual storefront content.
+
+For a production deployment, start with
+[SERVER_SETUP.md](./SERVER_SETUP.md). Review
+[SERVER_REQUIREMENTS.md](./SERVER_REQUIREMENTS.md) before choosing a server.
 
 [![React](https://img.shields.io/badge/React-19.2.0-61DAFB?logo=react)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-3178C6?logo=typescript)](https://www.typescriptlang.org)
@@ -20,6 +27,8 @@
 - [Code Standards](#-code-standards)
 - [Testing](#-testing)
 - [Deployment](#-deployment)
+- [Production server setup](./SERVER_SETUP.md)
+- [Minimum server requirements](./SERVER_REQUIREMENTS.md)
 - [Contributing](#-contributing)
 - [Troubleshooting](#-troubleshooting)
 - [License](#-license)
@@ -70,7 +79,7 @@
 | ------------------------ | ------- | ----------------------- |
 | **React**                | 19.2.0  | UI framework            |
 | **TypeScript**           | 5.9.3   | Type safety             |
-| **Vite**                 | 7.1.12  | Build tool & dev server |
+| **Vite**                 | 7.0.0   | Build tool & dev server |
 | **TanStack React Query** | 5.90.6  | Server state management |
 | **React Router**         | 7.9.5   | Client-side routing     |
 | **Tailwind CSS**         | 3.4.13  | Utility-first CSS       |
@@ -84,7 +93,7 @@
 | --------------------------- | ------- | --------------------- |
 | **Express**                 | 4.18.2  | Web framework         |
 | **TypeScript**              | 5.3.3   | Type safety           |
-| **SQLite** (better-sqlite3) | 9.2.2   | Database              |
+| **MySQL** (mysql2)       | 8.0+    | Database              |
 | **JWT** (jsonwebtoken)      | 9.0.2   | Authentication        |
 | **bcryptjs**                | 2.4.3   | Password hashing      |
 | **Zod**                     | 3.22.4  | Schema validation     |
@@ -247,22 +256,29 @@ Contact channel defaults, visibility switches, and channel setup notes are docum
 
    ```env
    # Frontend (.env)
-   VITE_API_URL=http://localhost:3000/api
+   VITE_API_URL=http://localhost:3001/api
    ```
 
    Create a `.env` file in the `backend/` directory:
 
    ```env
    # Backend (backend/.env)
-   PORT=3000
-   JWT_SECRET=
+   PORT=3001
+   NODE_ENV=development
+   DB_DRIVER=mysql
+   JWT_SECRET=<generated-secret>
+   MYSQL_HOST=127.0.0.1
+   MYSQL_PORT=3306
+   MYSQL_USER=wardity_app
+   MYSQL_PASSWORD=<database-password>
+   MYSQL_DATABASE=wardity
    NODE_ENV=development
    ```
 
 5. **Initialize the database** (if needed)
    ```bash
    cd backend
-   npm run seed  # If seed script exists
+   npm run seed  # Development/sample data only
    ```
 
 ### Running the Application
@@ -276,7 +292,7 @@ cd backend
 npm run dev
 ```
 
-Backend will run on `http://localhost:3000`
+Backend will run on `http://localhost:3001`
 
 **Terminal 2 - Start Frontend:**
 
@@ -465,7 +481,7 @@ export const Component: FC<ComponentProps> = ({ id, onUpdate }) => {
 
 ### Base URL
 
-- **Development**: `http://localhost:3000/api`
+- **Development**: `http://localhost:3001/api`
 - **Production**: `https://your-domain.com/api`
 
 ### Authentication
@@ -573,53 +589,16 @@ npm test -- --coverage
 
 ## 🚀 Deployment
 
-### Frontend Deployment (Vercel/Netlify)
+### Production deployment
 
-1. **Build the project**
+The frontend is a static `dist/` build and the backend is a separate Node.js
+service. MySQL, persistent upload storage, a reverse proxy, and HTTPS are
+required for the recommended single-server deployment.
 
-   ```bash
-   npm run build
-   ```
-
-2. **Set environment variables** in your hosting platform:
-
-   - `VITE_API_URL`: Your backend API URL
-
-3. **Deploy** the `dist/` folder
-
-### Backend Deployment
-
-1. **Build the backend**
-
-   ```bash
-   cd backend
-   npm run build
-   ```
-
-2. **Set environment variables**:
-
-   - `PORT`: Server port
-   - `JWT_SECRET`: Strong secret key
-   - `NODE_ENV`: `production`
-
-3. **Start the server**
-   ```bash
-   npm start
-   ```
-
-### Docker Deployment (Optional)
-
-```dockerfile
-# Dockerfile example
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY . .
-RUN npm run build
-EXPOSE 3000
-CMD ["npm", "start"]
-```
+Follow the complete command-by-command guide in
+[SERVER_SETUP.md](./SERVER_SETUP.md). It covers SSH access, package
+installation, MySQL, environment files, builds, systemd, Nginx, HTTPS,
+backups, and smoke tests.
 
 ---
 
@@ -717,7 +696,11 @@ lsof -ti:5173 | xargs kill
 **Issue**: TypeScript errors
 
 ```bash
-# Check for type errors
+# Check the frontend type/build pipeline
+npm run build
+
+# Check backend types
+cd backend
 npm run typecheck
 
 # Fix linting issues
@@ -730,7 +713,7 @@ npm run lint -- --fix
 
 ```bash
 cd backend
-npm run seed  # If seed script exists
+npm run seed  # Development/sample data only
 # Or manually initialize database
 ```
 

@@ -1,96 +1,102 @@
-# Quick Setup Guide
+# Backend quick setup guide
 
-## 1. Install Dependencies
+The current backend requires MySQL. SQLite settings from older documentation
+are no longer valid.
+
+## 1. Install dependencies
 
 ```bash
 cd backend
 npm install
 ```
 
-## 2. Configure Environment
+## 2. Configure the environment
 
-Create a `.env` file in the `backend` directory:
+Create `backend/.env`:
 
 ```env
 PORT=3001
 NODE_ENV=development
-JWT_SECRET=
+REQUEST_BODY_LIMIT=100kb
+JWT_SECRET=<generated-secret>
 JWT_EXPIRES_IN=7d
 DB_DRIVER=mysql
 MYSQL_HOST=127.0.0.1
 MYSQL_PORT=3306
-MYSQL_USER=root
-MYSQL_PASSWORD=your-local-password
-MYSQL_DATABASE=wardity_import_nofk_20261016
+MYSQL_USER=wardity_app
+MYSQL_PASSWORD=<database-password>
+MYSQL_DATABASE=wardity
+MYSQL_CONNECTION_LIMIT=10
+MYSQL_QUEUE_LIMIT=0
+MYSQL_TIMEZONE=Z
+UPLOADS_DIR=./uploads
+PRODUCTS_DEFAULT_PAGE_SIZE=20
 CORS_ORIGIN=http://localhost:5173
+DEV_CORS_ORIGINS=http://localhost:5173
 ```
 
-Generate a unique signing secret and set it as `JWT_SECRET` (at least 32 bytes):
+Generate a signing secret:
 
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 ```
 
-## 3. Seed the Database
+The backend refuses to start when `JWT_SECRET` is missing, too short, or a
+known placeholder.
 
-This will create initial data including:
-- A test user (test@example.com / password123)
-- Sample products, categories, and occasions
+## 3. Initialize development data
+
+The schema is initialized when the backend starts. To insert sample data:
 
 ```bash
 npm run seed
 ```
 
-## 4. Start the Server
+This is for development only. Review the seed script before using it on an
+existing or production database.
+
+## 4. Start and test the server
 
 ```bash
 npm run dev
+curl http://localhost:3001/health
 ```
 
-The server will be available at `http://localhost:3001`
+The API is available at `http://localhost:3001`.
 
-## 5. Update Frontend Configuration
+## 5. Connect the frontend
 
-In your frontend `.env` file (or `vite.config.ts`), set:
+From the repository root, set:
 
 ```env
 VITE_API_URL=http://localhost:3001/api
 ```
 
-## Testing the API
+Then start the Vite development server:
 
-### Health Check
 ```bash
-curl http://localhost:3001/health
+npm run dev
 ```
 
-### Register a User
+## Production
+
 ```bash
-curl -X POST http://localhost:3001/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"password123","name":"John Doe"}'
+npm ci
+npm run typecheck
+npm run build
+npm start
 ```
 
-### Login
-```bash
-curl -X POST http://localhost:3001/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"password123"}'
-```
-
-### Get Products (with token)
-```bash
-curl http://localhost:3001/api/products \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
-```
+For the complete SSH deployment, MySQL account, Nginx, systemd, and HTTPS
+instructions, see [SERVER_SETUP.md](../SERVER_SETUP.md). See
+[SERVER_REQUIREMENTS.md](../SERVER_REQUIREMENTS.md) for minimum server
+capacity and required persistent storage.
 
 ## Troubleshooting
 
-### Port Already in Use
-If port 3001 is already in use, change `PORT` in `.env`
-
-### Database Errors
-Delete `data/wardity.db` and run `npm run seed` again
-
-### CORS Issues
-Make sure `CORS_ORIGIN` in `.env` matches your frontend URL
+- **Port already in use:** change `PORT` and update the reverse proxy.
+- **Database connection errors:** check MySQL is running and all `MYSQL_*`
+  values match the database account.
+- **CORS errors:** set `CORS_ORIGIN` to the exact frontend origin.
+- **Missing images:** ensure `UPLOADS_DIR` exists and is writable by the
+  backend service account.

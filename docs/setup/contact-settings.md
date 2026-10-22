@@ -1,5 +1,8 @@
 # Contact settings
 
+For persistent production storage and deployment commands, see
+[SERVER_SETUP.md](../../SERVER_SETUP.md).
+
 ## Where the settings live
 
 In the running app, sign in with an administrator account and open **Admin → Settings** (`/admin/settings`). The form contains the four contact values and four independent **Show on storefront** switches. The fields and switches are stored separately.

@@ -1,5 +1,8 @@
 # Email contact and sending
 
+For production server and secret-storage setup, see
+[SERVER_SETUP.md](../../SERVER_SETUP.md).
+
 The public contact email is editable on **Admin → Settings** (`/admin/settings`), with an independent visibility switch. The default value is `abdalrahmanamr275@gmail.com`, and it is not shown publicly until enabled. The link opens the visitor's email application with a `mailto:` link.
 
 ## Email sending status

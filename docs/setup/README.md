@@ -1,4 +1,8 @@
-# Wardity setup guides
+# Wardity integration and contact setup guides
+
+These guides describe contact links and optional backend integrations. They do
+not replace the production hosting instructions in
+[SERVER_SETUP.md](../../SERVER_SETUP.md).
 
 ## Contact settings
 
@@ -8,4 +12,8 @@
 - [WhatsApp setup](./whatsapp.md)
 - [Telegram setup](./telegram-bot.md)
 
-The storefront currently supports public phone, email, WhatsApp, and Telegram links. All are disabled by default. Email sending, WhatsApp messaging, and Telegram bot messaging are **not implemented**; enabling one of those contact links does not send notifications.
+The storefront currently supports public phone, email, WhatsApp, and Telegram
+links. All are disabled by default. Public links open the visitor's phone,
+email client, WhatsApp, or Telegram. Optional order-notification environment
+variables exist for Telegram and WhatsApp, but enabling a public contact link
+alone does not send a notification.
