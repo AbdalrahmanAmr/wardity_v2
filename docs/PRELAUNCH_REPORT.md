@@ -4,12 +4,11 @@ Date: 2026-11-16
 
 ## Executive summary
 
-**Go/no-go: NO-GO.** The requested Phase A hardening and concurrency tests now
-pass, but the free-shipping threshold remains 2,000 EGP rather than the
-requested 1,700 EGP, as explicitly left unchanged for this phase. Root lint
-also fails on the new test harness and existing warnings until the lint
-findings are addressed. One high production dependency advisory remains
-because its only available fix is the major Zod 4 upgrade.
+**Go/no-go: CONDITIONAL GO.** The requested Phase A hardening and concurrency tests now
+pass. The owner has confirmed that the free-shipping threshold is intentionally
+2,000 EGP, not 1,700 EGP. One high production dependency advisory remains;
+the owner accepted it as a scheduled risk with array bounds and request-size
+mitigations while a future Zod 4 migration is planned.
 
 ## Revised checklist status
 
@@ -22,23 +21,22 @@ because its only available fix is the major Zod 4 upgrade.
 | Conditional stock update and rollback on zero affected rows | Done | [orders-mysql.ts](../backend/src/routes/orders-mysql.ts:368-378) |
 | Admin status allow-list and order ID validation | Done | [admin-mysql.ts](../backend/src/routes/admin-mysql.ts:218-263) |
 | Isolated order-flow/tampering harness | Done | [order-flow-test.ts](../backend/src/scripts/order-flow-test.ts:1-310) |
-| Free-shipping threshold 1,700 EGP | Not done by instruction | Current production rule remains 2,000 EGP at [orders-mysql.ts](../backend/src/routes/orders-mysql.ts:319-340) |
+| Free-shipping threshold | Owner decision | Intentionally remains 2,000 EGP at [orders-mysql.ts](../backend/src/routes/orders-mysql.ts:319-340); 1,700 EGP is not a launch requirement |
 
 ## Ranked findings
 
 ### Blocker
 
-1. **Free-shipping threshold is still wrong.** The server and client use a
-   2,000 EGP threshold, while the audit requirement is 1,700 EGP. This was
-   intentionally not changed per the latest instruction.
-2. **Production audit is not clean.** `zod@3.25.76` remains affected by
-   GHSA-mrhx-c7xc-m3w5 (high, fix available only as `zod@4.6.7`, a major
-   upgrade). Do not launch without accepting, testing, and scheduling that
-   major migration.
+1. **Production audit has an accepted scheduled Zod risk.** `zod@3.25.76`
+   remains affected by GHSA-mrhx-c7xc-m3w5 (high; fix available only as
+   `zod@4.6.7`, a major upgrade). The owner accepted this risk pending the
+   scheduled Zod 4 migration. All current Zod arrays have explicit `.max()`
+   bounds, and JSON parsing is capped by `REQUEST_BODY_LIMIT` (100kb in the
+   test harness).
 
 ### Should-fix
 
-1. **Lint warnings remain.** `npm run lint` now passes with 43 warnings,
+1. **Lint warnings remain.** `npm run lint` passes with 43 warnings,
    including existing non-null assertions, hook dependency, and fast-refresh
    findings. The production build and backend typecheck/build pass.
 2. **Backend schema migrations run at startup.** The idempotent CAPI migration
@@ -70,6 +68,8 @@ because its only available fix is the major Zod 4 upgrade.
 | Backend build | `cd backend; npm run build` | Pass |
 | Isolated order-flow | `cd backend; npm run test:order-flow` | Pass against `wardity_test` |
 | Database guard | `TEST_DATABASE_NAME=wardity_dev` | Refused execution |
+| Oversized Zod array | `POST /api/track` with 1,000 `content_ids` | Rejected with 400 in under 2 seconds |
+| Request body limit | `POST /api/track` with a body over 100kb | Rejected with 413 |
 | Concurrent stock test | Included in order-flow harness | Pass: two orders for one item produced 201/409; stock 0; one order item |
 | Production dependency audit | `npm audit --omit=dev` | One high Zod advisory remains |
 
@@ -77,7 +77,11 @@ The harness verifies register/login, cart, checkout, server-derived totals,
 tampered prices and quantities, ownership checks, out-of-stock behavior,
 WhatsApp's ordered 11 parameters and sanitization, image header, maximum
 three follow-up images, Meta success/error/timeout/missing credentials,
-persisted CAPI status, and login rate limiting.
+persisted CAPI status, login rate limiting, fast rejection of oversized arrays,
+and rejection of request bodies over the configured limit. `express.json({ limit:
+runtimeConfig.requestBodyLimit })` and
+`express.urlencoded({ ..., limit: runtimeConfig.requestBodyLimit })` apply the
+configured request limit in [index.ts](../backend/src/index.ts:57-58).
 
 ## Dependency advisories
 
@@ -86,10 +90,13 @@ After non-breaking fixes and updating Express to the latest 4.x patch
 
 | Package | Severity | Dependency path | Fix version |
 |---|---|---|---|
-| zod | High | `wardity-backend > zod@3.25.76` | `4.6.7` (major; not applied) |
+| zod | High | `wardity-backend > zod@3.25.76` | `4.6.7` (major; accepted scheduled risk) |
 
 The earlier `body-parser` high, `multer` high, `proxy-addr` critical, and
 `qs` moderate advisories were removed by non-breaking dependency updates.
+The accepted Zod mitigation is explicit maximum lengths on every Zod array,
+plus the 100kb JSON/urlencoded body limit and the automated oversized-array
+test above. Schedule the Zod 4 migration with compatibility testing.
 
 ## Production environment and live-only checklist
 
@@ -102,8 +109,8 @@ listed in [backend/.env.example](../backend/.env.example).
 - [ ] Use the real HTTPS frontend origin and verify CORS rejects unrelated origins.
 - [ ] Verify login, expiry, normal-user 403 responses on every admin endpoint,
   and production-only proxy trust.
-- [ ] Complete orders below, exactly at, and above the intended 1,700 EGP
-  threshold after that business-rule change is approved.
+- [ ] Complete orders below, exactly at, and above the intended 2,000 EGP
+  threshold.
 - [ ] Verify WhatsApp template payloads and Arabic encoding with provider
   credentials.
 - [ ] Verify Meta/WhatsApp errors, timeouts, missing credentials, and persisted

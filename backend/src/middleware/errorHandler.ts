@@ -4,6 +4,8 @@ import { ZodError } from "zod";
 export interface ApiError extends Error {
   code?: number;
   details?: Record<string, string[]>;
+  status?: number;
+  statusCode?: number;
 }
 
 export function errorHandler(
@@ -22,7 +24,10 @@ export function errorHandler(
     return;
   }
 
-  const code = err.code && err.code >= 400 && err.code < 500 ? err.code : 500;
+  const candidateStatus = err.statusCode ?? err.status ?? err.code;
+  const code = typeof candidateStatus === "number" && candidateStatus >= 400 && candidateStatus < 500
+    ? candidateStatus
+    : 500;
   const message = code === 500 ? "Internal server error" : (err.message || "Request failed");
 
   console.error("Error:", err);

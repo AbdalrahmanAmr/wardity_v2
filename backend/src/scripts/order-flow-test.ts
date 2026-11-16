@@ -81,6 +81,7 @@ async function startBackend(metaToken = "mock-meta-token"): Promise<ChildProcess
       META_PIXEL_ID: metaToken ? "mock-pixel-id" : "",
       META_CAPI_TOKEN: metaToken,
       META_GRAPH_BASE_URL: `http://127.0.0.1:${port}`,
+      REQUEST_BODY_LIMIT: "100kb",
       ORDER_NOTIFICATION_TIMEOUT_MS: "500",
       META_CAPI_TIMEOUT_MS: "300",
     },
@@ -148,6 +149,35 @@ async function main(): Promise<void> {
 
     const email = `customer-${randomUUID()}@example.com`;
     const password = "Strong-test-password-123";
+    const oversizedArrayStartedAt = Date.now();
+    const oversizedArray = await request("/api/track", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        event: "AddToCart",
+        eventId: randomUUID(),
+        content_ids: Array.from({ length: 1000 }, (_, index) => `product-${index}`),
+        value: 100,
+        currency: "EGP",
+        consent: true,
+      }),
+    });
+    assert.equal(oversizedArray.response.status, 400);
+    assert.ok(Date.now() - oversizedArrayStartedAt < 2000);
+    const oversizedBody = await request("/api/track", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        event: "AddToCart",
+        eventId: randomUUID(),
+        content_ids: ["product-0"],
+        value: 100,
+        currency: "EGP",
+        consent: true,
+        padding: "x".repeat(101 * 1024),
+      }),
+    });
+    assert.equal(oversizedBody.response.status, 413);
     const registered = await request("/api/auth/register", {
       method: "POST",
       headers: { "content-type": "application/json" },
