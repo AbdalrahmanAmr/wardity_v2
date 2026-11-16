@@ -15,6 +15,14 @@ Replace every value in angle brackets before running a command.
 
 From your local terminal:
 
+```
+
+The Nginx limit is a general edge limit, not a substitute for application
+limits on login and order creation. Validate the configuration before reload:
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
 ```bash
 ssh <server-user>@<server-ip>
 ```
@@ -34,7 +42,7 @@ sudo chown -R wardity:wardity /var/www/wardity
 ```bash
 sudo apt update
 sudo apt upgrade -y
-sudo apt install -y ca-certificates curl git nginx mysql-server build-essential
+sudo apt install -y ca-certificates curl git nginx mysql-server build-essential ufw
 ```
 
 Install the Node.js LTS release (the current project requires Node.js 20 or
@@ -52,6 +60,21 @@ Enable MySQL and Nginx:
 ```bash
 sudo systemctl enable --now mysql
 sudo systemctl enable --now nginx
+
+Configure the host firewall before exposing the server. Replace the SSH rule
+with the administrator's trusted source range when possible:
+
+```bash
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw allow from <trusted-admin-ip-or-cidr> to any port 22 proto tcp
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw --force enable
+sudo ufw status verbose
+```
+
+Do not open MySQL (3306) or the backend port (3001) publicly.
 ```
 
 ## 3. Create the production database
@@ -80,8 +103,9 @@ mysql -u wardity_app -p wardity < /path/to/wardity-production.sql
 ```
 
 On a new installation, the backend initializes its required tables on startup.
-Run the seed script only when you intentionally want the repository's sample
-data; never run it against a live store without reviewing the script first.
+The backend initializes the schema but does not provide a seed command. Load
+reviewed development fixtures separately; never import sample data into a live
+store.
 
 ## 4. Upload the application
 
@@ -144,6 +168,8 @@ MYSQL_DATABASE=wardity
 MYSQL_CONNECTION_LIMIT=10
 MYSQL_QUEUE_LIMIT=0
 MYSQL_TIMEZONE=Z
+TRUST_PROXY=true
+CONTACT_SETTINGS_PATH=/var/lib/wardity/config/contact-settings.json
 CORS_ORIGIN=https://<domain>
 DEV_CORS_ORIGINS=
 TELEGRAM_BOT_TOKEN=
@@ -151,30 +177,40 @@ TELEGRAM_CHAT_ID=
 WHATSAPP_TOKEN=
 WHATSAPP_PHONE_NUMBER_ID=
 WHATSAPP_ORDER_RECIPIENTS=
-WHATSAPP_API_VERSION=v21.0
+WHATSAPP_API_VERSION=v26.0
 ORDER_NOTIFICATION_TIMEOUT_MS=5000
 META_PIXEL_ID=
 META_CAPI_TOKEN=
-META_GRAPH_VERSION=v21.0
+META_GRAPH_VERSION=v26.0
 META_TEST_EVENT_CODE=
 META_CAPI_TIMEOUT_MS=3000
 EOF
 unset JWT_SECRET
 ```
 
-Create persistent directories and copy contact settings if the deployment has
-an existing configuration:
+Create persistent directories and initialize the configurable contact settings
+path. Do not use a repository symlink:
 
 ```bash
 sudo mkdir -p /var/lib/wardity/uploads /var/lib/wardity/config
 sudo chown -R wardity:wardity /var/lib/wardity
-cp backend/config/contact-settings.json /var/lib/wardity/config/contact-settings.json
-rm backend/config/contact-settings.json
-ln -s /var/lib/wardity/config/contact-settings.json backend/config/contact-settings.json
+if [ -f backend/config/contact-settings.json ] && [ ! -f /var/lib/wardity/config/contact-settings.json ]; then
+  cp backend/config/contact-settings.json /var/lib/wardity/config/contact-settings.json
+fi
+sudo chown wardity:wardity /var/lib/wardity/config/contact-settings.json
+sudo chmod 600 /var/lib/wardity/config/contact-settings.json
 ```
 
-If the repository already contains production contact settings, preserve that
-file instead of overwriting it with the default.
+If production contact settings already exist, preserve them. The backend reads
+the file from `CONTACT_SETTINGS_PATH`; no symlink in the release directory is
+required.
+
+Restrict the environment file and other runtime secrets:
+
+```bash
+chmod 600 backend/.env
+chmod 700 /var/lib/wardity /var/lib/wardity/config /var/lib/wardity/uploads
+```
 
 ## 6. Build and validate
 
@@ -222,6 +258,7 @@ ExecStart=/usr/bin/node /var/www/wardity/current/backend/dist/index.js
 Restart=on-failure
 RestartSec=5
 Environment=NODE_ENV=production
+Environment=TRUST_PROXY=true
 NoNewPrivileges=true
 PrivateTmp=true
 
@@ -246,6 +283,15 @@ sudo journalctl -u wardity-backend -f
 Replace `<domain>` with the real domain:
 
 ```bash
+sudo tee /etc/nginx/conf.d/wardity-limit.conf > /dev/null <<'EOF'
+limit_req_zone $binary_remote_addr zone=wardity_api:10m rate=10r/s;
+EOF
+sudo tee /etc/nginx/snippets/wardity-security-headers.conf > /dev/null <<'EOF'
+add_header X-Content-Type-Options "nosniff" always;
+add_header X-Frame-Options "DENY" always;
+add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+EOF
 sudo tee /etc/nginx/sites-available/wardity > /dev/null <<'EOF'
 server {
     listen 80;
@@ -255,17 +301,21 @@ server {
     root /var/www/wardity/current/dist;
     index index.html;
     client_max_body_size 10m;
+    include /etc/nginx/snippets/wardity-security-headers.conf;
 
     location /api/ {
+        limit_req zone=wardity_api burst=20 nodelay;
         proxy_pass http://127.0.0.1:3001;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
     }
 
     location /health {
+        limit_req zone=wardity_api burst=5 nodelay;
         proxy_pass http://127.0.0.1:3001;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-Proto $scheme;
@@ -275,6 +325,7 @@ server {
         proxy_pass http://127.0.0.1:3001;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-Proto $scheme;
+        include /etc/nginx/snippets/wardity-security-headers.conf;
         add_header Cache-Control "public, max-age=31536000, immutable";
     }
 
@@ -337,3 +388,37 @@ curl --fail https://<domain>/health
 Back up the MySQL database and `/var/lib/wardity` before every release. Keep
 `.env` files, JWT secrets, database passwords, and provider tokens out of Git,
 logs, tickets, and screenshots.
+
+## 11. Automated backups
+
+Create a root-owned backup directory and a restricted backup script. Store the
+password through a root-readable MySQL client configuration or secret manager,
+not in the cron command line:
+
+```bash
+sudo install -d -o root -g root -m 700 /var/backups/wardity
+sudo tee /root/.my.cnf > /dev/null <<'EOF'
+[client]
+user=wardity_app
+password=<strong-database-password>
+host=127.0.0.1
+EOF
+sudo chmod 600 /root/.my.cnf
+sudo tee /usr/local/sbin/wardity-backup > /dev/null <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+dest="/var/backups/wardity/$stamp"
+install -d -m 700 "$dest"
+mysqldump --single-transaction --routines --triggers wardity | gzip > "$dest/mysql.sql.gz"
+tar -C /var/lib/wardity -czf "$dest/runtime.tgz" uploads config
+find /var/backups/wardity -mindepth 1 -maxdepth 1 -type d -mtime +14 -exec rm -rf -- {} +
+EOF
+sudo chmod 700 /usr/local/sbin/wardity-backup
+sudo sh -c 'printf "15 2 * * * root /usr/local/sbin/wardity-backup\n" > /etc/cron.d/wardity-backup'
+sudo chmod 644 /etc/cron.d/wardity-backup
+sudo /usr/local/sbin/wardity-backup
+```
+
+Copy backups to separate encrypted storage and perform a documented restore
+test before launch. The local retention command is not an off-host backup.

@@ -352,12 +352,22 @@ export async function initializeDatabaseMySQL(): Promise<void> {
       total            DECIMAL(10,2) NOT NULL,
       shipping_address TEXT          NOT NULL,
       payment_method   VARCHAR(100),
+      notes            TEXT,
+      whatsapp_status  ENUM('pending', 'sent', 'failed') NOT NULL DEFAULT 'pending',
+      whatsapp_error   TEXT,
+      capi_status      ENUM('pending', 'sent', 'failed', 'skipped') NOT NULL DEFAULT 'pending',
+      capi_error       TEXT,
       event_id         VARCHAR(255),
       created_at       DATETIME      NOT NULL DEFAULT NOW(),
       updated_at       DATETIME      NOT NULL DEFAULT NOW()
     ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
   `);
   await addColumnIfMissing("orders", "event_id", "VARCHAR(255)");
+  await addColumnIfMissing("orders", "notes", "TEXT");
+  await addColumnIfMissing("orders", "whatsapp_status", "ENUM('pending', 'sent', 'failed') NOT NULL DEFAULT 'pending'");
+  await addColumnIfMissing("orders", "whatsapp_error", "TEXT");
+  await addColumnIfMissing("orders", "capi_status", "ENUM('pending', 'sent', 'failed', 'skipped') NOT NULL DEFAULT 'pending'");
+  await addColumnIfMissing("orders", "capi_error", "TEXT");
   await addColumnIfMissing("orders", "merchandise_subtotal", "DECIMAL(10,2)");
   await addColumnIfMissing("orders", "delivery_location_id", "VARCHAR(36)");
   await addColumnIfMissing("orders", "delivery_location_name", "VARCHAR(255)");

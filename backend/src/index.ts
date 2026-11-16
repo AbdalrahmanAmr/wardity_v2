@@ -12,6 +12,7 @@ import { UPLOADS_DIR } from "./utils/uploads.js";
 import { validateJwtSecret } from "./utils/jwt.js";
 import { runtimeConfig } from "./config/runtime.js";
 import { mkdirSync } from "fs";
+import { logMetaConfigurationStatus } from "./services/metaCapi.js";
 
 // ── Database driver selection ──────────────────────────────────────────────
 if (runtimeConfig.databaseDriver !== "mysql") {
@@ -21,9 +22,11 @@ if (runtimeConfig.databaseDriver !== "mysql") {
 const app  = express();
 const configuredOrigins = runtimeConfig.corsOrigins;
 const isDevelopment = runtimeConfig.nodeEnv !== "production";
+app.set("trust proxy", runtimeConfig.trustProxy);
 
 async function bootstrap() {
   validateJwtSecret();
+  logMetaConfigurationStatus();
 
   // ── Initialise database ──────────────────────────────────────────────────
   const { initMySQL }               = await import("./database/mysql.js");

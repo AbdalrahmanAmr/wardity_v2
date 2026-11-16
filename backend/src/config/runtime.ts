@@ -19,6 +19,7 @@ function getCsvEnv(name: string): string[] {
 export const runtimeConfig = {
   port: getIntegerEnv("PORT", 3001),
   nodeEnv: process.env.NODE_ENV || "development",
+  trustProxy: process.env.NODE_ENV === "production" ? 1 : false,
   databaseDriver: (process.env.DB_DRIVER || "").toLowerCase(),
   corsOrigins: getCsvEnv("CORS_ORIGIN"),
   developmentCorsOrigins: getCsvEnv("DEV_CORS_ORIGINS"),
@@ -29,6 +30,9 @@ export const runtimeConfig = {
   mysqlConnectionLimit: getIntegerEnv("MYSQL_CONNECTION_LIMIT", 10),
   mysqlQueueLimit: getIntegerEnv("MYSQL_QUEUE_LIMIT", 0, 0),
   mysqlTimezone: process.env.MYSQL_TIMEZONE || "Z",
+  contactSettingsPath: process.env.CONTACT_SETTINGS_PATH || "config/contact-settings.json",
+  whatsappApiBaseUrl: process.env.WHATSAPP_API_BASE_URL || "https://graph.facebook.com",
+  metaGraphBaseUrl: process.env.META_GRAPH_BASE_URL || "https://graph.facebook.com",
   orderNotificationTimeoutMs: getIntegerEnv("ORDER_NOTIFICATION_TIMEOUT_MS", 5000),
   metaCapiTimeoutMs: getIntegerEnv("META_CAPI_TIMEOUT_MS", 3000),
 };

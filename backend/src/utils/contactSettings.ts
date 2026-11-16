@@ -1,8 +1,8 @@
 import { existsSync, readFileSync, renameSync, writeFileSync } from "fs";
-import { dirname, resolve } from "path";
-import { fileURLToPath } from "url";
+import { resolve } from "path";
+import { runtimeConfig } from "../config/runtime.js";
 
-const configPath = resolve(dirname(fileURLToPath(import.meta.url)), "../../config/contact-settings.json");
+const configPath = resolve(process.cwd(), runtimeConfig.contactSettingsPath);
 
 export interface ContactSettings {
   values: { phone: string; email: string; whatsapp: string; telegram: string };
@@ -10,7 +10,7 @@ export interface ContactSettings {
 }
 
 export const defaultContactSettings: ContactSettings = {
-  values: { phone: "01115239553", email: "abdalrahmanamr275@gmail.com", whatsapp: "", telegram: "" },
+  values: { phone: "", email: "", whatsapp: "", telegram: "" },
   enabled: { phone: false, email: false, whatsapp: false, telegram: false },
 };
 

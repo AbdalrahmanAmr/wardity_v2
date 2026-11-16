@@ -27,6 +27,9 @@ export interface AdminOrder {
   requires_shipping_quote?: boolean | number;
   shipping_address: string;
   payment_method: string;
+  notes?: string | null;
+  whatsapp_status: "pending" | "sent" | "failed";
+  whatsapp_error?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -90,6 +93,18 @@ export function useResolveShippingQuote() {
   return useMutation({
     mutationFn: ({ id, deliveryFee }: { id: string; deliveryFee: number }) => api.patch(`/admin/orders/${id}/shipping-quote`, { deliveryFee }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: adminQueryKeys.orders() }); },
+  });
+}
+
+export function useResendOrderWhatsApp() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      return api.post<{ status: "pending" | "sent" | "failed" }>(`/admin/orders/${id}/whatsapp-resend`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.orders() });
+    },
   });
 }
 

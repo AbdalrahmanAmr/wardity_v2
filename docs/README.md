@@ -9,9 +9,9 @@ For a production deployment, start with
 [SERVER_SETUP.md](./SERVER_SETUP.md). Review
 [SERVER_REQUIREMENTS.md](./SERVER_REQUIREMENTS.md) before choosing a server.
 
-[![React](https://img.shields.io/badge/React-19.2.0-61DAFB?logo=react)](https://react.dev)
+[![React](https://img.shields.io/badge/React-19.0.0-61DAFB?logo=react)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-3178C6?logo=typescript)](https://www.typescriptlang.org)
-[![Vite](https://img.shields.io/badge/Vite-7.1.12-646CFF?logo=vite)](https://vitejs.dev)
+[![Vite](https://img.shields.io/badge/Vite-7.0.0-646CFF?logo=vite)](https://vitejs.dev)
 [![TanStack Query](https://img.shields.io/badge/TanStack%20Query-5.90.6-FF4154?logo=reactquery)](https://tanstack.com/query)
 
 ---
@@ -77,7 +77,7 @@ For a production deployment, start with
 
 | Technology               | Version | Purpose                 |
 | ------------------------ | ------- | ----------------------- |
-| **React**                | 19.2.0  | UI framework            |
+| **React**                | 19.0.0  | UI framework            |
 | **TypeScript**           | 5.9.3   | Type safety             |
 | **Vite**                 | 7.0.0   | Build tool & dev server |
 | **TanStack React Query** | 5.90.6  | Server state management |
@@ -219,7 +219,7 @@ Wardity/
 
 ### Owner setup guides
 
-Contact channel defaults, visibility switches, and channel setup notes are documented in the [Wardity setup guides](./docs/setup/README.md).
+Contact channel defaults, visibility switches, and channel setup notes are documented in the [Wardity setup guides](./setup/README.md).
 
 ### Prerequisites
 
@@ -278,7 +278,6 @@ Contact channel defaults, visibility switches, and channel setup notes are docum
 5. **Initialize the database** (if needed)
    ```bash
    cd backend
-   npm run seed  # Development/sample data only
    ```
 
 ### Running the Application
@@ -352,7 +351,6 @@ npm run preview
 | `npm run dev`       | Start development server with hot reload (tsx watch) |
 | `npm run build`     | Compile TypeScript to JavaScript                     |
 | `npm start`         | Start production server                              |
-| `npm run seed`      | Seed database with initial data                      |
 | `npm run typecheck` | Type check without emitting files                    |
 
 ### Development Workflow
@@ -713,7 +711,6 @@ npm run lint -- --fix
 
 ```bash
 cd backend
-npm run seed  # Development/sample data only
 # Or manually initialize database
 ```
 

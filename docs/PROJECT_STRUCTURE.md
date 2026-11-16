@@ -37,12 +37,12 @@ Wardity/
 │   ├── uploads/                 # Local upload storage (ignored by Git)
 │   ├── .env.example             # Backend configuration template
 │   └── package.json
-├── docs/setup/                  # Contact-channel setup and limitations
+├── docs/                       # Project and deployment documentation
+│   ├── backend/                # Backend setup guides
+│   └── setup/                  # Contact-channel setup and limitations
 ├── dist/                        # Generated frontend build (not committed)
 ├── .env.example                 # Public frontend configuration template
-├── SERVER_SETUP.md              # SSH deployment runbook
-├── SERVER_REQUIREMENTS.md       # Minimum hosting requirements
-└── SECURITY_ACTIONS.md          # Secret and environment checklist
+└── package.json
 ```
 
 ## Runtime boundaries
@@ -60,7 +60,7 @@ entrypoint is `node backend/dist/index.js`. The API requires MySQL and refuses
 to start unless `DB_DRIVER=mysql` and the MySQL settings are present.
 
 The backend exposes `/health`, `/api/*`, and `/uploads/*`. Uploaded media and
-`backend/config/contact-settings.json` must be kept on persistent writable
+The path in `CONTACT_SETTINGS_PATH` must be kept on persistent writable
 storage when deploying or replacing releases.
 
 ## Source-of-truth configuration

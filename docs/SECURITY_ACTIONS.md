@@ -75,14 +75,14 @@ is set and that the MySQL connection values point to a running database.
 
 | Variable | Purpose |
 | --- | --- |
-| `PORT`, `NODE_ENV`, `REQUEST_BODY_LIMIT` | HTTP listener, runtime mode, and request-size limit |
+| `PORT`, `NODE_ENV`, `REQUEST_BODY_LIMIT`, `TRUST_PROXY` | HTTP listener, runtime mode, request-size limit, and trusted reverse-proxy mode |
 | `JWT_SECRET`, `JWT_EXPIRES_IN` | JWT signing key and token lifetime |
 | `DB_DRIVER`, `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE` | Database driver and connection |
 | `MYSQL_CONNECTION_LIMIT`, `MYSQL_QUEUE_LIMIT`, `MYSQL_TIMEZONE` | MySQL pool and date handling |
-| `UPLOADS_DIR`, `PRODUCTS_DEFAULT_PAGE_SIZE` | Upload storage and default product pagination |
+| `UPLOADS_DIR`, `CONTACT_SETTINGS_PATH`, `PRODUCTS_DEFAULT_PAGE_SIZE` | Persistent upload/contact storage and default product pagination |
 | `CORS_ORIGIN`, `DEV_CORS_ORIGINS` | Production and local-development browser origin allowlists |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Optional Telegram order notifications |
-| `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ORDER_RECIPIENTS`, `WHATSAPP_API_VERSION` | Optional WhatsApp order notifications |
+| `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ORDER_RECIPIENTS`, `WHATSAPP_API_VERSION`, `WHATSAPP_TEMPLATE_NAME`, `WHATSAPP_TEMPLATE_LANG` | Optional WhatsApp order notifications |
 | `ORDER_NOTIFICATION_TIMEOUT_MS` | Timeout for order-notification requests |
 | `META_PIXEL_ID`, `META_CAPI_TOKEN`, `META_GRAPH_VERSION`, `META_TEST_EVENT_CODE`, `META_CAPI_TIMEOUT_MS` | Optional server-side Meta event tracking |
 
@@ -91,7 +91,7 @@ is set and that the MySQL connection values point to a running database.
 | Variable | Purpose |
 | --- | --- |
 | `VITE_API_URL` | Browser-facing API base URL |
-| `VITE_META_PIXEL_ID`, `VITE_GA4_ID` | Optional public analytics identifiers (not secrets) |
+| `VITE_META_PIXEL_ID`, `VITE_GA4_ID`, `VITE_FACEBOOK_URL` | Optional public analytics/contact identifiers (not secrets) |
 
 The application also has fixed product/domain behavior (for example, supported
 currency and provider API hosts). These are not secret deployment settings and

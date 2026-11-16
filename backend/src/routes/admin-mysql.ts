@@ -22,7 +22,9 @@ import { validate, createProductSchema, updateProductSchema } from "../utils/val
 import { getEffectiveSale, ProductSaleFields } from "../utils/productPricing.js";
 import { readContactSettings, validateContactSettings, writeContactSettings } from "../utils/contactSettings.js";
 import { dbGet, dbAll, dbRun, dbTransaction } from "../database/mysql.js";
+import { loadOrderNotificationPayload, sendOrderNotifications } from "../services/orderNotifications.js";
 import type { ExecuteValues, RowDataPacket } from "mysql2/promise";
+import { adminRateLimit } from "../middleware/rateLimit.js";
 
 export const adminRouterMySQL = Router();
 
@@ -37,6 +39,7 @@ type DeliveryLocationRecord = {
 };
 
 adminRouterMySQL.use(authenticateToken);
+adminRouterMySQL.use(adminRateLimit);
 adminRouterMySQL.use(requireAdmin);
 
 // ── Contact settings ───────────────────────────────────────────────────────
@@ -211,21 +214,51 @@ async function updateTaxonomy(
 }
 
 // ── Orders ─────────────────────────────────────────────────────────────────
+const orderIdPattern = /^[A-Za-z0-9_-]{1,100}$/;
+const allowedOrderStatuses = new Set([
+  "pending",
+  "confirmed",
+  "processing",
+  "preparing",
+  "shipped",
+  "out for delivery",
+  "delivered",
+  "cancelled",
+  "awaiting_shipping_quote",
+]);
+
+function validateOrderId(id: string): boolean {
+  return orderIdPattern.test(id);
+}
+
 adminRouterMySQL.get("/orders", async (_req, res: Response) => {
   const orders = await dbAll(
-    "SELECT id, user_id, status, total, merchandise_subtotal, delivery_location_id, delivery_location_name, delivery_location_name_ar, delivery_fee, requested_delivery_date, requested_delivery_time, requires_shipping_quote, shipping_address, payment_method, created_at, updated_at FROM orders ORDER BY created_at DESC",
+    "SELECT id, user_id, status, total, merchandise_subtotal, delivery_location_id, delivery_location_name, delivery_location_name_ar, delivery_fee, requested_delivery_date, requested_delivery_time, requires_shipping_quote, shipping_address, payment_method, notes, whatsapp_status, whatsapp_error, created_at, updated_at FROM orders ORDER BY created_at DESC",
   );
   res.json({ data: orders });
 });
 
+adminRouterMySQL.post("/orders/:id/whatsapp-resend", async (req, res: Response) => {
+  if (!validateOrderId(req.params.id)) { res.status(400).json({ message: "Invalid order ID." }); return; }
+  const payload = await loadOrderNotificationPayload(req.params.id);
+  if (!payload) { res.status(404).json({ message: "Order not found." }); return; }
+  const status = await sendOrderNotifications(payload, { whatsappOnly: true });
+  res.json({ status });
+});
+
 adminRouterMySQL.patch("/orders/:id", async (req, res: Response) => {
   const { status } = req.body;
-  if (!status) { res.status(400).json({ message: "Status is required" }); return; }
+  if (!validateOrderId(req.params.id)) { res.status(400).json({ message: "Invalid order ID." }); return; }
+  if (typeof status !== "string" || !allowedOrderStatuses.has(status)) {
+    res.status(400).json({ message: "Invalid order status." });
+    return;
+  }
   await dbRun("UPDATE orders SET status = ?, updated_at = NOW() WHERE id = ?", [status, req.params.id]);
   res.json({ message: "Order status updated", status: 200 });
 });
 
 adminRouterMySQL.patch("/orders/:id/shipping-quote", async (req, res: Response) => {
+  if (!validateOrderId(req.params.id)) { res.status(400).json({ message: "Invalid order ID." }); return; }
   const fee = Number(req.body?.deliveryFee);
   if (!Number.isFinite(fee) || fee < 0) { res.status(400).json({ message: "Delivery fee must be zero or greater." }); return; }
   const order = await dbGet<{ merchandise_subtotal: number | string | null; requires_shipping_quote: number; status: string }>(

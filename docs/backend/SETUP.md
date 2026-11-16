@@ -46,14 +46,9 @@ known placeholder.
 
 ## 3. Initialize development data
 
-The schema is initialized when the backend starts. To insert sample data:
-
-```bash
-npm run seed
-```
-
-This is for development only. Review the seed script before using it on an
-existing or production database.
+The schema is initialized when the backend starts. This repository does not
+provide a seed command; load reviewed development fixtures separately and
+never import sample data into production.
 
 ## 4. Start and test the server
 

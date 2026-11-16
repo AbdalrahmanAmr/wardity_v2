@@ -55,15 +55,11 @@ terminal:
 curl http://localhost:3001/health
 ```
 
-## Database and sample data
+## Database initialization
 
-Use `npm run seed` only for a new development database or after reviewing the
-seed script. It inserts sample users and catalog data and should not be run
-blindly against production.
-
-```bash
-npm run seed
-```
+The backend initializes the required schema but does not provide a seed
+command. Load reviewed development fixtures separately; never import sample
+data into production.
 
 ## Frontend connection
 
@@ -100,4 +96,7 @@ For the complete SSH, MySQL, Nginx, systemd, and HTTPS procedure, see
 - Set `CORS_ORIGIN` to the exact HTTPS frontend origin.
 - Keep `JWT_SECRET` at least 32 random bytes.
 - Put `UPLOADS_DIR` and contact settings on persistent writable storage.
+- Set `CONTACT_SETTINGS_PATH` to the persistent contact-settings file.
+- Set `TRUST_PROXY=true` only when the backend is behind a trusted reverse
+  proxy such as the documented Nginx configuration.
 - Keep notification and tracking tokens in the backend environment only.

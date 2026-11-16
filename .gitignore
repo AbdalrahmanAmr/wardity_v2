@@ -46,3 +46,8 @@ coverage
 *.pem
 .cache
 .turbo
+docs*
+!docs/
+!docs/setup/
+!docs/setup/tracking.md
+docs/setup/TODO.md

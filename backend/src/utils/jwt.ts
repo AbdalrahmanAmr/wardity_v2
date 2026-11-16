@@ -32,10 +32,22 @@ export function validateJwtSecret(): void {
 export function generateToken(payload: TokenPayload): string {
   const secret = getJwtSecret();
   const expiresIn = process.env.JWT_EXPIRES_IN || "7d";
-  return jwt.sign(payload, secret, { expiresIn: expiresIn as jwt.SignOptions["expiresIn"] });
+  return jwt.sign(payload, secret, {
+    algorithm: "HS256",
+    expiresIn: expiresIn as jwt.SignOptions["expiresIn"],
+  });
 }
 
 export function verifyToken(token: string): TokenPayload {
   const secret = getJwtSecret();
-  return jwt.verify(token, secret) as TokenPayload;
+  const decoded = jwt.verify(token, secret, { algorithms: ["HS256"] });
+  if (
+    typeof decoded !== "object" ||
+    decoded === null ||
+    typeof decoded.exp !== "number" ||
+    decoded.exp <= Math.floor(Date.now() / 1000)
+  ) {
+    throw new Error("JWT must contain a valid expiration");
+  }
+  return decoded as TokenPayload;
 }

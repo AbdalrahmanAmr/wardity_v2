@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
-import { getJwtSecret } from "../utils/jwt.js";
+import { verifyToken } from "../utils/jwt.js";
 import { dbGet } from "../database/mysql.js";
 
 export interface AuthRequest extends Request {
@@ -29,14 +28,8 @@ export function authenticateToken(
     return;
   }
 
-  const secret = getJwtSecret();
   try {
-    const decoded = jwt.verify(token, secret) as {
-      userId: string;
-      email: string;
-      name: string;
-      role: string;
-    };
+    const decoded = verifyToken(token);
     req.userId = decoded.userId;
     req.user = {
       id: decoded.userId,

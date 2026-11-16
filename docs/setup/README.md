@@ -2,7 +2,7 @@
 
 These guides describe contact links and optional backend integrations. They do
 not replace the production hosting instructions in
-[SERVER_SETUP.md](../../SERVER_SETUP.md).
+[SERVER_SETUP.md](../SERVER_SETUP.md).
 
 ## Contact settings
 
@@ -11,6 +11,7 @@ not replace the production hosting instructions in
 - [Email setup](./email.md)
 - [WhatsApp setup](./whatsapp.md)
 - [Telegram setup](./telegram-bot.md)
+- [Tracking setup](./tracking.md)
 
 The storefront currently supports public phone, email, WhatsApp, and Telegram
 links. All are disabled by default. Public links open the visitor's phone,

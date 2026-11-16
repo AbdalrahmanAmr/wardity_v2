@@ -148,7 +148,6 @@ The database includes the following tables:
 - `npm run dev` - Start development server with hot reload
 - `npm run build` - Build for production
 - `npm run start` - Start production server
-- `npm run seed` - Seed database with initial data
 - `npm run typecheck` - Type check without building
 
 ### Project Structure

@@ -1,5 +1,5 @@
 import { FC, useState } from "react";
-import { useAdminOrders, useResolveShippingQuote, useUpdateOrder } from "@/services/queries/adminQueries";
+import { useAdminOrders, useResolveShippingQuote, useUpdateOrder, useResendOrderWhatsApp } from "@/services/queries/adminQueries";
 import { PageLoadingSpinner, ErrorBlock } from "@/components/ui";
 import { useAdminTranslations } from "@/locales/admin";
 
@@ -7,6 +7,7 @@ export const AdminOrders: FC = () => {
   const { data: orders, isLoading, isError } = useAdminOrders();
   const updateOrder = useUpdateOrder();
   const resolveQuote = useResolveShippingQuote();
+  const resendWhatsApp = useResendOrderWhatsApp();
   const t = useAdminTranslations();
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [quoteFees, setQuoteFees] = useState<Record<string, string>>({});
@@ -50,6 +51,7 @@ export const AdminOrders: FC = () => {
               <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">Delivery</th>
               <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">{t.date}</th>
               <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">{t.status}</th>
+              <th className="p-4 font-medium text-sm text-gray-500 dark:text-gray-400">WhatsApp</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
@@ -74,11 +76,21 @@ export const AdminOrders: FC = () => {
                     <option value="cancelled">{t.cancelled}</option>
                   </select>
                 </td>
+                <td className="p-4 text-sm">
+                  <span className={order.whatsapp_status === "sent" ? "text-green-700" : order.whatsapp_status === "failed" ? "text-red-700" : "text-amber-700"}>
+                    {order.whatsapp_status}
+                  </span>
+                  {order.whatsapp_status === "failed" && (
+                    <button type="button" className="ml-2 rounded bg-primary px-2 py-1 text-white" disabled={resendWhatsApp.isPending} onClick={() => resendWhatsApp.mutate(order.id)}>
+                      Resend
+                    </button>
+                  )}
+                </td>
               </tr>
             ))}
             {(!orders || orders.length === 0) && (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-gray-500">{t.noOrders}</td>
+                <td colSpan={7} className="p-8 text-center text-gray-500">{t.noOrders}</td>
               </tr>
             )}
           </tbody>

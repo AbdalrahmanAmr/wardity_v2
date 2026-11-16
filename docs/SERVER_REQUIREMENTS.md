@@ -30,8 +30,8 @@ The host must support:
   equivalent process manager.
 - MySQL connections from the backend and a database account with access to the
   Wardity database.
-- Persistent writable storage for `backend/uploads` and
-  `backend/config/contact-settings.json`.
+- Persistent writable storage for the configured `UPLOADS_DIR` and
+  `CONTACT_SETTINGS_PATH`.
 - TLS certificates and automatic renewal.
 - DNS records for the production domain.
 - Firewall rules allowing SSH (preferably from trusted IPs), HTTP, and HTTPS;

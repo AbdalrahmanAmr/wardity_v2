@@ -161,6 +161,7 @@ export const Checkout: FC = () => {
         consent: choice === "accepted",
         email: formData.email,
         phone: formData.phone,
+        notes: formData.notes || undefined,
         sourceUrl: window.location.href,
         deliveryLocationId: formData.deliveryLocationId,
         requestedDeliveryDate: formData.deliveryDate,

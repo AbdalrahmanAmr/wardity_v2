@@ -16,6 +16,7 @@ import { effectiveProductPrice } from "../utils/productPricing.js";
 import { sendMetaEvent } from "../services/metaCapi.js";
 import { sendOrderNotifications } from "../services/orderNotifications.js";
 import { dbGet, dbAll, dbTransaction } from "../database/mysql.js";
+import { orderRateLimit } from "../middleware/rateLimit.js";
 
 export const ordersRouterMySQL = Router();
 
@@ -208,7 +209,7 @@ ordersRouterMySQL.get("/:id", async (req: AuthRequest, res: Response) => {
 });
 
 // ── POST /api/orders ───────────────────────────────────────────────────────
-ordersRouterMySQL.post("/", async (req: AuthRequest, res: Response) => {
+ordersRouterMySQL.post("/", orderRateLimit, async (req: AuthRequest, res: Response) => {
   const {
     shippingAddress,
     customerName,
@@ -218,6 +219,7 @@ ordersRouterMySQL.post("/", async (req: AuthRequest, res: Response) => {
     email,
     phone,
     sourceUrl,
+    notes,
     deliveryLocationId,
     requestedDeliveryDate,
     requestedDeliveryTime,
@@ -329,7 +331,7 @@ ordersRouterMySQL.post("/", async (req: AuthRequest, res: Response) => {
       total = requiresQuote ? null : merchandiseSubtotal + deliveryFee!;
 
       await conn.execute(
-        "INSERT INTO orders (id, user_id, status, total, merchandise_subtotal, delivery_location_id, delivery_location_name, delivery_location_name_ar, delivery_fee, requested_delivery_date, requested_delivery_time, requires_shipping_quote, shipping_address, payment_method, event_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO orders (id, user_id, status, total, merchandise_subtotal, delivery_location_id, delivery_location_name, delivery_location_name_ar, delivery_fee, requested_delivery_date, requested_delivery_time, requires_shipping_quote, shipping_address, payment_method, notes, event_id, capi_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         [
           orderId,
           req.userId!,
@@ -345,7 +347,9 @@ ordersRouterMySQL.post("/", async (req: AuthRequest, res: Response) => {
           requiresQuote ? 1 : 0,
           shippingAddress,
           paymentMethod || null,
+          notes || null,
           eventId || null,
+          consent ? "pending" : "skipped",
         ],
       );
 
@@ -362,15 +366,15 @@ ordersRouterMySQL.post("/", async (req: AuthRequest, res: Response) => {
           ],
         );
         if (item.stock_quantity !== null) {
-          const remaining = item.stock_quantity - item.quantity;
-          await conn.execute(
-            "UPDATE products SET stock_quantity = ?, status = ?, updated_at = NOW() WHERE id = ?",
-            [
-              remaining,
-              remaining === 0 ? "Out of stock" : "In stock",
-              item.product_id,
-            ],
+          const [stockUpdate] = await conn.execute(
+            "UPDATE products SET stock_quantity = stock_quantity - ?, status = CASE WHEN stock_quantity - ? = 0 THEN 'Out of stock' ELSE 'In stock' END, updated_at = NOW() WHERE id = ? AND stock_quantity >= ?",
+            [item.quantity, item.quantity, item.product_id, item.quantity],
           );
+          if ((stockUpdate as { affectedRows?: number }).affectedRows !== 1) {
+            throw new Error(
+              `Product ${item.product_id} is out of stock or does not have enough stock available.`,
+            );
+          }
         }
       }
 
@@ -402,12 +406,14 @@ ordersRouterMySQL.post("/", async (req: AuthRequest, res: Response) => {
     total: number;
     shippingAddress: string;
     paymentMethod: string | null;
+    notes: string | null;
     createdAt: string;
     updatedAt: string;
   }>(
     `SELECT id, status, total, merchandise_subtotal AS merchandiseSubtotal, delivery_location_id AS deliveryLocationId, delivery_location_name AS deliveryLocationName, delivery_location_name_ar AS deliveryLocationNameAr, delivery_fee AS deliveryFee, requested_delivery_date AS requestedDeliveryDate, requested_delivery_time AS requestedDeliveryTime, requires_shipping_quote AS requiresShippingQuote,
             shipping_address AS shippingAddress,
             payment_method   AS paymentMethod,
+            notes,
             created_at       AS createdAt,
             updated_at       AS updatedAt
        FROM orders WHERE id = ?`,
@@ -436,6 +442,7 @@ ordersRouterMySQL.post("/", async (req: AuthRequest, res: Response) => {
   res.status(201).json({
     ...createdOrder,
     paymentMethod: createdOrder?.paymentMethod || undefined,
+    notes: createdOrder?.notes || undefined,
     items: orderItems.map((item) => ({
       id: item.id,
       product: {
@@ -459,6 +466,9 @@ ordersRouterMySQL.post("/", async (req: AuthRequest, res: Response) => {
     requestedDeliveryDate,
     requestedDeliveryTime: schedule.time,
     total: createdOrder?.total ?? null,
+    paymentMethod: paymentMethod || null,
+    notes: notes || null,
+    orderCreatedAt: createdOrder?.createdAt || null,
     items: orderItems.map((item) => ({
       name: item.name,
       sku: item.sku,
@@ -486,7 +496,7 @@ ordersRouterMySQL.post("/", async (req: AuthRequest, res: Response) => {
         userAgent: req.get("user-agent"),
         fbp: cookie(req, "_fbp"),
         fbc: cookie(req, "_fbc"),
-      }),
+      }, orderId),
     );
   }
 });

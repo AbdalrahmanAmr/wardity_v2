@@ -15,11 +15,12 @@ import { generateId } from "../utils/id.js";
 import { authenticateToken, AuthRequest } from "../middleware/auth.js";
 import { dbGet, dbRun } from "../database/mysql.js";
 import type { ExecuteValues } from "mysql2/promise";
+import { authRateLimit } from "../middleware/rateLimit.js";
 
 export const authRouterMySQL = Router();
 
 // ── POST /api/auth/register ────────────────────────────────────────────────
-authRouterMySQL.post("/register", async (req, res: Response) => {
+authRouterMySQL.post("/register", authRateLimit, async (req, res: Response) => {
   const { email, password, name, phone } = validate(registerSchema, req.body);
 
   const existingUser = await dbGet<{ id: string }>(
@@ -47,7 +48,7 @@ authRouterMySQL.post("/register", async (req, res: Response) => {
 });
 
 // ── POST /api/auth/login ───────────────────────────────────────────────────
-authRouterMySQL.post("/login", async (req, res: Response) => {
+authRouterMySQL.post("/login", authRateLimit, async (req, res: Response) => {
   const { email, password } = validate(loginSchema, req.body);
 
   const user = await dbGet<{

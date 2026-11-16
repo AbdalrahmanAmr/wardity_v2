@@ -124,6 +124,7 @@ export const addToWishlistSchema = z.object({
 // Order validation schemas
 export const createOrderSchema = z.object({
   shippingAddress: z.string().min(1, "Shipping address is required"),
+  notes: z.string().max(300, "Notes are too long").optional(),
   customerName: z.string().min(1, "Customer name is required").optional(),
   paymentMethod: z.string().optional(),
   eventId: z.string().uuid().optional(),
