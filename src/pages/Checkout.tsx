@@ -13,6 +13,7 @@ import { useDeliveryLocations } from "@/services/queries/deliveryLocationQueries
 import { useAddToCart, useClearCart } from "@/services/queries/cartQueries";
 import { useOrders } from "@/services/queries/orderQueries";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { getErrorMessage } from "@/utils/errorMessage";
 
 function cairoDate(): string {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -46,7 +47,7 @@ const INSTAPAY_WHATSAPP_NUMBER = "201007906629";
 export const Checkout: FC = () => {
   const { cart, clearCart } = useCart();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const { language, t } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +55,16 @@ export const Checkout: FC = () => {
   const locationsQuery = useDeliveryLocations();
   const clearServerCart = useClearCart();
   const addServerCart = useAddToCart();
-  const ordersQuery = useOrders(Boolean(user));
+  const ordersQuery = useOrders(Boolean(user) && !isAuthLoading, user?.id);
+
+  useEffect(() => {
+    if (!isAuthLoading && !user) {
+      navigate("/login", {
+        replace: true,
+        state: { from: { pathname: "/checkout" } },
+      });
+    }
+  }, [isAuthLoading, user, navigate]);
 
   const [formData, setFormData] = useState({
     firstName: user?.name.split(" ")[0] || "",
@@ -140,18 +150,20 @@ export const Checkout: FC = () => {
   const total =
     shippingCost === null ? null : cart.total + Number(shippingCost);
 
+  if (isAuthLoading || !user) return null;
+
   if (cart.items.length === 0) {
     return (
       <div
-        className="min-h-screen bg-wardity-bg py-12"
+        className="min-h-screen bg-wardity-bg py-12 dark:bg-wardity-bg-dark"
         dir={language === "ar" ? "rtl" : "ltr"}
       >
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto text-center py-16">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            <h1 className="text-3xl font-bold text-gray-900 mb-4 dark:text-wardity-text-dark">
               Your cart is empty
             </h1>
-            <p className="text-gray-600 mb-8">
+            <p className="text-gray-600 mb-8 dark:text-gray-300">
               Add items to your cart before checkout
             </p>
             <Link
@@ -255,37 +267,32 @@ export const Checkout: FC = () => {
         );
       navigate(`/orders/${encodeURIComponent(order.id)}`);
     } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : typeof err === "object" &&
-              err !== null &&
-              "message" in err &&
-              typeof err.message === "string"
-            ? err.message
-            : "Failed to place order. Please try again.";
-      setError(message);
+      setError(getErrorMessage(err, "Your order could not be placed. Check the order details and try again."));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-wardity-bg py-12">
+    <div className="min-h-screen bg-wardity-bg py-12 dark:bg-wardity-bg-dark">
       <div className="container mx-auto px-4">
         <div className="flex items-center gap-2 mb-8">
           <Link
             to="/cart"
-            className="text-gray-600 hover:text-primary transition-colors"
+            className="text-gray-600 hover:text-primary transition-colors dark:text-gray-300"
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900">Checkout</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-wardity-text-dark">Checkout</h1>
         </div>
 
         {error && (
           <div className="mb-6">
-            <ErrorBlock message={error} />
+            <ErrorBlock
+              compact
+              title="Order could not be placed"
+              message={error}
+            />
           </div>
         )}
 
@@ -294,9 +301,9 @@ export const Checkout: FC = () => {
           <div className="lg:col-span-2">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Shipping Information */}
-              <div className="bg-white rounded-xl p-6 shadow-sm">
+              <div className="bg-white rounded-xl p-6 shadow-sm dark:bg-wardity-card-dark">
                 <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                  <h2 className="text-xl font-bold text-gray-900">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-wardity-text-dark">
                     Shipping Information
                   </h2>
                   {lastOrder && (
@@ -313,7 +320,7 @@ export const Checkout: FC = () => {
                   <div>
                     <label
                       htmlFor="firstName"
-                      className="block text-sm font-medium text-gray-700 mb-2"
+                      className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-200"
                     >
                       First Name *
                     </label>
@@ -324,13 +331,13 @@ export const Checkout: FC = () => {
                       value={formData.firstName}
                       onChange={handleChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-primary outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-wardity-text-dark"
                     />
                   </div>
                   <div>
                     <label
                       htmlFor="lastName"
-                      className="block text-sm font-medium text-gray-700 mb-2"
+                      className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-200"
                     >
                       Last Name *
                     </label>
@@ -341,14 +348,14 @@ export const Checkout: FC = () => {
                       value={formData.lastName}
                       onChange={handleChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-primary outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-wardity-text-dark"
                     />
                   </div>
                 </div>
                 <div className="mt-4">
                   <label
                     htmlFor="email"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-200"
                   >
                     Email *
                   </label>
@@ -359,13 +366,13 @@ export const Checkout: FC = () => {
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-primary outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-wardity-text-dark"
                   />
                 </div>
                 <div className="mt-4">
                   <label
                     htmlFor="phone"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-200"
                   >
                     Phone Number *
                   </label>
@@ -376,13 +383,13 @@ export const Checkout: FC = () => {
                     value={formData.phone}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-primary outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-wardity-text-dark"
                   />
                 </div>
                 <div className="mt-4">
                   <label
                     htmlFor="address"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-200"
                   >
                     Address *
                   </label>
@@ -393,14 +400,14 @@ export const Checkout: FC = () => {
                     onChange={handleChange}
                     required
                     rows={3}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-primary outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-wardity-text-dark"
                   />
                 </div>
                 <div className="grid md:grid-cols-2 gap-4 mt-4">
                   <div>
                     <label
                       htmlFor="deliveryLocationId"
-                      className="block text-sm font-medium text-gray-700 mb-2"
+                      className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-200"
                     >
                       Delivery location *
                     </label>
@@ -413,7 +420,7 @@ export const Checkout: FC = () => {
                       disabled={
                         locationsQuery.isLoading || locationsQuery.isError
                       }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-primary outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-wardity-text-dark"
                     >
                       <option value="">
                         {locationsQuery.isLoading
@@ -447,7 +454,7 @@ export const Checkout: FC = () => {
                   <div>
                     <label
                       htmlFor="postalCode"
-                      className="block text-sm font-medium text-gray-700 mb-2"
+                      className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-200"
                     >
                       Postal Code
                     </label>
@@ -457,22 +464,22 @@ export const Checkout: FC = () => {
                       type="text"
                       value={formData.postalCode}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-primary outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-wardity-text-dark"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Delivery Options */}
-              <div className="bg-white rounded-xl p-6 shadow-sm">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">
+              <div className="bg-white rounded-xl p-6 shadow-sm dark:bg-wardity-card-dark">
+                <h2 className="text-xl font-bold text-gray-900 mb-6 dark:text-wardity-text-dark">
                   Delivery Options
                 </h2>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label
                       htmlFor="deliveryDate"
-                      className="block text-sm font-medium text-gray-700 mb-2"
+                      className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-200"
                     >
                       Delivery Date *
                     </label>
@@ -484,14 +491,14 @@ export const Checkout: FC = () => {
                       onChange={handleChange}
                       required
                       min={today}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-primary outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-wardity-text-dark"
                     />
                   </div>
                   {formData.deliveryDate !== today && (
                     <div>
                       <label
                         htmlFor="deliveryTime"
-                        className="block text-sm font-medium text-gray-700 mb-2"
+                        className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-200"
                       >
                         Delivery Time *
                       </label>
@@ -504,7 +511,7 @@ export const Checkout: FC = () => {
                           formData.deliveryDate &&
                           formData.deliveryDate !== today,
                         )}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-primary outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-wardity-text-dark"
                       >
                         <option value="">Select time</option>
                         {timeOptions.map((option) => (
@@ -519,7 +526,7 @@ export const Checkout: FC = () => {
                 <div className="mt-4">
                   <label
                     htmlFor="notes"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-200"
                   >
                     Delivery Notes (Optional)
                   </label>
@@ -530,18 +537,18 @@ export const Checkout: FC = () => {
                     onChange={handleChange}
                     rows={3}
                     placeholder="Any special instructions for delivery..."
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-primary focus:border-primary outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-wardity-text-dark"
                   />
                 </div>
               </div>
 
               {/* Payment Method */}
-              <div className="bg-white rounded-xl p-6 shadow-sm">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">
+              <div className="bg-white rounded-xl p-6 shadow-sm dark:bg-wardity-card-dark">
+                <h2 className="text-xl font-bold text-gray-900 mb-6 dark:text-wardity-text-dark">
                   Payment Method
                 </h2>
                 <div className="space-y-3">
-                  <label className="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-primary transition-colors">
+                  <label className="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-primary transition-colors dark:border-gray-700">
                     <input
                       type="radio"
                       name="paymentMethod"
@@ -552,7 +559,7 @@ export const Checkout: FC = () => {
                     />
                     <span className="ml-3 font-medium">Cash on Delivery</span>
                   </label>
-                  <label className="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-primary transition-colors">
+                  <label className="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-primary transition-colors dark:border-gray-700">
                     <input
                       type="radio"
                       name="paymentMethod"
@@ -566,10 +573,10 @@ export const Checkout: FC = () => {
                 </div>
                 {formData.paymentMethod === "instapay" && (
                   <div className="mt-4 rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm">
-                    <p className="font-semibold text-gray-900">
+                    <p className="font-semibold text-gray-900 dark:text-wardity-text-dark">
                       Send the payment to InstaPay number {INSTAPAY_PHONE_DISPLAY}.
                     </p>
-                    <p className="mt-1 text-gray-700">
+                    <p className="mt-1 text-gray-700 dark:text-gray-300">
                       After payment, send the transaction screenshot on WhatsApp.
                     </p>
                     <a
@@ -605,8 +612,8 @@ export const Checkout: FC = () => {
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl p-6 shadow-sm sticky top-24">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">
+            <div className="bg-white rounded-xl p-6 shadow-sm sticky top-24 dark:bg-wardity-card-dark">
+              <h2 className="text-xl font-bold text-gray-900 mb-6 dark:text-wardity-text-dark">
                 Order Summary
               </h2>
               <div className="space-y-4 mb-6">
@@ -621,10 +628,10 @@ export const Checkout: FC = () => {
                       className="w-16 h-16 rounded-lg object-cover"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
+                      <p className="text-sm font-medium text-gray-900 truncate dark:text-wardity-text-dark">
                         {item.product.name}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         Qty: {item.quantity}
                       </p>
                       <p className="text-sm font-bold text-primary">
@@ -634,12 +641,12 @@ export const Checkout: FC = () => {
                   </div>
                 ))}
               </div>
-              <div className="border-t border-gray-200 pt-4 space-y-2">
-                <div className="flex justify-between text-gray-600">
+              <div className="border-t border-gray-200 pt-4 space-y-2 dark:border-gray-700">
+                <div className="flex justify-between text-gray-600 dark:text-gray-300">
                   <span>Subtotal</span>
                   <span>{formatCurrency(cart.total, "EGP", "en-US", 2)}</span>
                 </div>
-                <div className="flex justify-between text-gray-600">
+                <div className="flex justify-between text-gray-600 dark:text-gray-300">
                   <span>Shipping</span>
                   <span className={shippingCost === 0 ? "text-success" : ""}>
                     {quoteRequired
@@ -651,7 +658,7 @@ export const Checkout: FC = () => {
                           : formatCurrency(shippingCost, "EGP", "en-US", 2)}
                   </span>
                 </div>
-                <div className="flex justify-between text-xl font-bold text-gray-900 pt-2 border-t border-gray-200">
+                <div className="flex justify-between text-xl font-bold text-gray-900 pt-2 border-t border-gray-200 dark:border-gray-700 dark:text-wardity-text-dark">
                   <span>Total</span>
                   <span className="text-primary">
                     {total === null

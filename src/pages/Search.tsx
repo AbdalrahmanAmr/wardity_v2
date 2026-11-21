@@ -131,7 +131,7 @@ export const Search: FC = () => {
       : "Try a different keyword or spelling.";
 
   return (
-    <div className="min-h-screen bg-wardity-bg py-12">
+    <div className="min-h-screen bg-wardity-bg py-12 dark:bg-wardity-bg-dark">
       <div className="container mx-auto px-4">
         <div className="mx-auto mb-8 max-w-2xl">
           <form role="search" onSubmit={handleSubmit} className="relative">
@@ -149,10 +149,10 @@ export const Search: FC = () => {
               aria-label={
                 language === "ar" ? "بحث المنتجات" : "Search products"
               }
-              className="w-full rounded-full border border-gray-200 bg-white py-4 pl-12 pr-12 text-lg outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
+              className="w-full rounded-full border border-gray-200 bg-white py-4 pl-12 pr-12 text-lg text-gray-900 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-wardity-card-dark dark:text-wardity-text-dark"
             />
             <MagnifyingGlassIcon
-              className="absolute left-4 top-1/2 h-6 w-6 -translate-y-1/2 text-gray-400"
+              className="absolute left-4 top-1/2 h-6 w-6 -translate-y-1/2 text-gray-400 dark:text-gray-300"
               aria-hidden="true"
             />
             {searchTerm && (
@@ -311,13 +311,13 @@ export const Search: FC = () => {
         {!hasSearch ? (
           <div className="py-16 text-center">
             <MagnifyingGlassIcon
-              className="mx-auto mb-4 h-24 w-24 text-gray-300"
+              className="mx-auto mb-4 h-24 w-24 text-gray-300 dark:text-gray-600"
               aria-hidden="true"
             />
-            <h2 className="mb-2 text-2xl font-bold text-gray-900">
+            <h2 className="mb-2 text-2xl font-bold text-gray-900 dark:text-wardity-text-dark">
               {emptyTitle}
             </h2>
-            <p className="text-gray-600">{emptyText}</p>
+            <p className="text-gray-600 dark:text-gray-300">{emptyText}</p>
           </div>
         ) : isLoading ? (
           <div className="flex justify-center py-16">
@@ -335,7 +335,7 @@ export const Search: FC = () => {
         ) : products && products.length > 0 ? (
           <>
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-wardity-text-dark">
                 {resultHeading}
               </h2>
             </div>
@@ -347,10 +347,10 @@ export const Search: FC = () => {
           </>
         ) : (
           <div className="py-16 text-center">
-            <p className="mb-2 text-xl font-medium text-gray-700">
+            <p className="mb-2 text-xl font-medium text-gray-700 dark:text-gray-200">
               {noResultsTitle}
             </p>
-            <p className="text-gray-500">{noResultsText}</p>
+            <p className="text-gray-500 dark:text-gray-400">{noResultsText}</p>
             <button
               type="button"
               onClick={clearSearch}

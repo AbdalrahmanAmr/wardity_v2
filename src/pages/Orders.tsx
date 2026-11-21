@@ -29,24 +29,25 @@ const statusColor = (status: string) =>
       : "text-primary bg-primary/10";
 
 export const LegacyOrders: FC = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading: isAuthLoading, user } = useAuth();
   const { language, t } = useLanguage();
   const navigate = useNavigate();
-  const query = useOrders(isAuthenticated);
+  const query = useOrders(isAuthenticated && !isAuthLoading, user?.id);
 
   useEffect(() => {
-    if (!isAuthenticated) navigate("/login");
-  }, [isAuthenticated, navigate]);
+    if (!isAuthLoading && !isAuthenticated) navigate("/login");
+  }, [isAuthLoading, isAuthenticated, navigate]);
+  if (isAuthLoading) return null;
   if (!isAuthenticated) return null;
 
   if (query.isLoading)
     return (
-      <div className="min-h-screen bg-wardity-bg py-12">
+      <div className="min-h-screen bg-wardity-bg py-12 dark:bg-wardity-bg-dark">
         <div className="container mx-auto space-y-4 px-4">
           {[1, 2, 3].map((item) => (
             <div
               key={item}
-              className="h-36 animate-pulse rounded-xl bg-white"
+              className="h-36 animate-pulse rounded-xl bg-white dark:bg-wardity-card-dark"
             />
           ))}
         </div>
@@ -54,11 +55,11 @@ export const LegacyOrders: FC = () => {
     );
   if (query.isError)
     return (
-      <div className="container mx-auto min-h-screen px-4 py-16 text-center">
-        <h1 className="text-2xl font-bold text-gray-900">
+      <div className="container mx-auto min-h-screen bg-wardity-bg px-4 py-16 text-center dark:bg-wardity-bg-dark">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-wardity-text-dark">
           {language === "ar" ? "تعذر تحميل الطلبات" : "Unable to load orders"}
         </h1>
-        <p className="mt-2 text-gray-600">
+        <p className="mt-2 text-gray-600 dark:text-gray-300">
           {language === "ar"
             ? "حاول مرة أخرى لاحقاً."
             : "Please try again later."}
@@ -69,18 +70,18 @@ export const LegacyOrders: FC = () => {
 
   return (
     <div
-      className="min-h-screen bg-wardity-bg py-12"
+      className="min-h-screen bg-wardity-bg py-12 dark:bg-wardity-bg-dark"
       dir={language === "ar" ? "rtl" : "ltr"}
     >
       <div className="container mx-auto px-4">
-        <h1 className="mb-8 text-3xl font-bold text-gray-900">{t("orders")}</h1>
+        <h1 className="mb-8 text-3xl font-bold text-gray-900 dark:text-wardity-text-dark">{t("orders")}</h1>
         {orders.length === 0 ? (
-          <div className="rounded-xl bg-white p-12 text-center">
+          <div className="rounded-xl bg-white p-12 text-center dark:bg-wardity-card-dark">
             <TruckIcon className="mx-auto mb-4 h-24 w-24 text-gray-300" />
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-wardity-text-dark">
               {language === "ar" ? "لا توجد طلبات بعد" : "No orders yet"}
             </h2>
-            <p className="mb-6 text-gray-600">
+            <p className="mb-6 text-gray-600 dark:text-gray-300">
               {language === "ar"
                 ? "ابدأ التسوق لرؤية طلباتك هنا"
                 : "Start shopping to see your orders here"}
@@ -95,11 +96,11 @@ export const LegacyOrders: FC = () => {
         ) : (
           <div className="space-y-4">
             {orders.map((order) => (
-              <div key={order.id} className="rounded-xl bg-white p-6 shadow-sm">
+              <div key={order.id} className="rounded-xl bg-white p-6 shadow-sm dark:bg-wardity-card-dark">
                 <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-center">
                   <div>
                     <div className="mb-2 flex items-center gap-3">
-                      <h2 className="text-lg font-bold text-gray-900">
+                      <h2 className="text-lg font-bold text-gray-900 dark:text-wardity-text-dark">
                         #{order.id}
                       </h2>
                       <span
@@ -108,7 +109,7 @@ export const LegacyOrders: FC = () => {
                         {statusLabel(order.status, language === "ar")}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
                       {formatDate(order.createdAt)}
                     </p>
                   </div>
@@ -124,7 +125,7 @@ export const LegacyOrders: FC = () => {
                     </Link>
                   </div>
                 </div>
-                <div className="flex gap-4 overflow-x-auto border-t border-gray-200 pt-4">
+                <div className="flex gap-4 overflow-x-auto border-t border-gray-200 pt-4 dark:border-gray-700">
                   {order.items.map((item) => (
                     <img
                       key={item.id}
@@ -144,29 +145,49 @@ export const LegacyOrders: FC = () => {
 };
 
 export const Orders: FC = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading: isAuthLoading, user } = useAuth();
   const { language, t } = useLanguage();
   const navigate = useNavigate();
-  const query = useOrders(isAuthenticated);
+  const query = useOrders(isAuthenticated && !isAuthLoading, user?.id);
   const ar = language === "ar";
   useEffect(() => {
-    if (!isAuthenticated) navigate("/login");
-  }, [isAuthenticated, navigate]);
+    if (!isAuthLoading && !isAuthenticated) navigate("/login");
+  }, [isAuthLoading, isAuthenticated, navigate]);
+  if (isAuthLoading) return null;
   if (!isAuthenticated) return null;
   if (query.isLoading)
-    return <div className="min-h-screen bg-wardity-bg py-12" />;
+    return <div className="min-h-screen bg-wardity-bg py-12 dark:bg-wardity-bg-dark" />;
   if (query.isError)
     return (
-      <div className="min-h-screen bg-wardity-bg p-12 text-center">
+      <div className="min-h-screen bg-wardity-bg p-12 text-center dark:bg-wardity-bg-dark">
         {ar ? "تعذر تحميل الطلبات" : "Unable to load orders"}
       </div>
     );
   return (
-    <main className="min-h-screen bg-wardity-bg py-12" dir={ar ? "rtl" : "ltr"}>
+    <main className="min-h-screen bg-wardity-bg py-12 dark:bg-wardity-bg-dark" dir={ar ? "rtl" : "ltr"}>
       <div className="container mx-auto max-w-4xl px-4">
         <h1 className="mb-8 text-3xl font-bold">{t("orders")}</h1>
-        <div className="space-y-4">
-          {(query.data || []).map((order) => {
+        {(!query.data || query.data.length === 0) ? (
+          <div className="rounded-xl bg-white p-12 text-center dark:bg-wardity-card-dark">
+            <TruckIcon className="mx-auto mb-4 h-24 w-24 text-gray-300" />
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-wardity-text-dark">
+              {ar ? "لا توجد طلبات بعد" : "No orders yet"}
+            </h2>
+            <p className="mt-2 text-gray-600 dark:text-gray-300">
+              {ar
+                ? "ابدأ التسوق لرؤية طلباتك هنا"
+                : "Start shopping to see your orders here"}
+            </p>
+            <Link
+              to="/"
+              className="mt-6 inline-block rounded-lg bg-primary px-8 py-3 font-semibold text-white"
+            >
+              {ar ? "ابدأ التسوق" : "Start Shopping"}
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-4">
+          {query.data.map((order) => {
             const quote =
               order.status === "awaiting_shipping_quote" ||
               Boolean(order.requiresShippingQuote);
@@ -188,12 +209,12 @@ export const Orders: FC = () => {
             return (
               <article
                 key={order.id}
-                className="rounded-xl bg-white p-5 shadow-sm"
+                className="rounded-xl bg-white p-5 shadow-sm dark:bg-wardity-card-dark"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <h2 className="font-bold">#{order.id}</h2>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       {formatDate(order.createdAt)}
                     </p>
                   </div>
@@ -209,7 +230,7 @@ export const Orders: FC = () => {
                 {location && (
                   <div className="mt-4 grid gap-2 border-t pt-3 text-sm sm:grid-cols-2">
                     <p>
-                      <span className="text-gray-500">
+                      <span className="text-gray-500 dark:text-gray-400">
                         {ar ? "المنطقة: " : "Location: "}
                       </span>
                       {location}
@@ -217,7 +238,7 @@ export const Orders: FC = () => {
 
                     {schedule && (
                       <p>
-                        <span className="text-gray-500">
+                        <span className="text-gray-500 dark:text-gray-400">
                           {ar ? "الموعد: " : "Schedule: "}
                         </span>
                         {schedule}
@@ -225,7 +246,7 @@ export const Orders: FC = () => {
                     )}
 
                     <p>
-                      <span className="text-gray-500">
+                      <span className="text-gray-500 dark:text-gray-400">
                         {ar ? "الإجمالي الفرعي: " : "Subtotal: "}
                       </span>
                       {formatCurrency(order.merchandiseSubtotal, "EGP", "en-US", 2)}
@@ -239,7 +260,7 @@ export const Orders: FC = () => {
                       </p>
                     ) : (
                       <p>
-                        <span className="text-gray-500">
+                        <span className="text-gray-500 dark:text-gray-400">
                           {ar ? "التوصيل: " : "Delivery: "}
                         </span>
                         {formatCurrency(order.deliveryFee, "EGP", "en-US", 2)}
@@ -257,7 +278,8 @@ export const Orders: FC = () => {
               </article>
             );
           })}
-        </div>
+          </div>
+        )}
       </div>
     </main>
   );

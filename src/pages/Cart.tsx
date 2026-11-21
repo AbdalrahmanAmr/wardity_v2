@@ -10,22 +10,36 @@ import {
 import { useCart } from "@/contexts/CartContext";
 import { formatCurrency } from "@/utils/formatters";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const Cart: FC = () => {
   const { cart, updateQuantity, removeFromCart, clearCart } = useCart();
   const navigate = useNavigate();
   const { language, t } = useLanguage();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+
+  const handleProceedToCheckout = () => {
+    if (!isAuthenticated) {
+      navigate("/login", {
+        replace: true,
+        state: { from: { pathname: "/checkout" } },
+      });
+      return;
+    }
+
+    navigate("/checkout");
+  };
 
   if (cart.items.length === 0) {
     return (
-      <div className="min-h-screen bg-wardity-bg py-12">
+      <div className="min-h-screen bg-wardity-bg py-12 dark:bg-wardity-bg-dark">
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto text-center py-16">
             <ShoppingBagIcon className="w-24 h-24 text-gray-300 mx-auto mb-6" />
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            <h1 className="text-3xl font-bold text-gray-900 mb-4 dark:text-wardity-text-dark">
               {t("emptyCart")}
             </h1>
-            <p className="text-gray-600 mb-8">
+            <p className="text-gray-600 mb-8 dark:text-gray-300">
               {language === "ar"
                 ? "لم تضف أي منتجات إلى سلتك بعد."
                 : "Looks like you haven't added anything to your cart yet."}
@@ -44,7 +58,7 @@ export const Cart: FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-wardity-bg py-12">
+    <div className="min-h-screen bg-wardity-bg py-12 dark:bg-wardity-bg-dark">
       <div className="container mx-auto px-4">
         <div className="flex items-center gap-2 mb-8">
           <Link
@@ -53,8 +67,8 @@ export const Cart: FC = () => {
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900">{t("cartTitle")}</h1>
-          <span className="text-gray-500">({cart.itemCount} items)</span>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-wardity-text-dark">{t("cartTitle")}</h1>
+          <span className="text-gray-500 dark:text-gray-400">({cart.itemCount} items)</span>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
@@ -63,7 +77,7 @@ export const Cart: FC = () => {
             {cart.items.map((item) => (
               <div
                 key={`${item.product.id}-${item.selectedSize || "default"}`}
-                className={`rounded-xl bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-6 ${item.product.status === "Out of stock" ? "border border-red-200" : ""}`}
+                className={`rounded-xl bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-6 dark:bg-wardity-card-dark ${item.product.status === "Out of stock" ? "border border-red-200 dark:border-red-700" : ""}`}
               >
                 <div className="flex min-w-0 flex-wrap gap-3 sm:flex-nowrap sm:gap-4">
                   {/* Product Image */}
@@ -84,12 +98,12 @@ export const Cart: FC = () => {
                       to={`/product/${item.product.id}`}
                       className="block mb-2"
                     >
-                      <h3 className="text-lg font-semibold text-gray-900 hover:text-primary transition-colors">
+                      <h3 className="text-lg font-semibold text-gray-900 hover:text-primary transition-colors dark:text-wardity-text-dark">
                         {item.product.name}
                       </h3>
                     </Link>
                     {item.selectedSize && (
-                      <p className="text-sm text-gray-500 mb-2">
+                      <p className="text-sm text-gray-500 mb-2 dark:text-gray-400">
                         Size: {item.selectedSize}
                       </p>
                     )}
@@ -110,13 +124,13 @@ export const Cart: FC = () => {
 
                   {/* Quantity Controls */}
                   <div className="ms-auto flex w-full items-center justify-between gap-3 sm:w-auto sm:flex-col sm:items-end sm:justify-start sm:gap-4">
-                    <div className="flex items-center rounded-lg border border-gray-200">
+                    <div className="flex items-center rounded-lg border border-gray-200 dark:border-gray-700">
                       <button
                         onClick={() =>
                           updateQuantity(item.product.id, item.quantity - 1)
                         }
                         disabled={item.product.status === "Out of stock"}
-                        className="min-h-11 min-w-11 p-2 text-gray-600 hover:bg-gray-50 transition-colors"
+                        className="min-h-11 min-w-11 p-2 text-gray-600 hover:bg-gray-50 transition-colors dark:text-gray-300 dark:hover:bg-gray-800"
                         aria-label="Decrease quantity"
                       >
                         <MinusIcon className="w-4 h-4" />
@@ -129,7 +143,7 @@ export const Cart: FC = () => {
                           updateQuantity(item.product.id, item.quantity + 1)
                         }
                         disabled={item.product.status === "Out of stock"}
-                        className="min-h-11 min-w-11 p-2 text-gray-600 hover:bg-gray-50 transition-colors"
+                        className="min-h-11 min-w-11 p-2 text-gray-600 hover:bg-gray-50 transition-colors dark:text-gray-300 dark:hover:bg-gray-800"
                         aria-label="Increase quantity"
                       >
                         <PlusIcon className="w-4 h-4" />
@@ -159,22 +173,22 @@ export const Cart: FC = () => {
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl p-6 shadow-sm sticky top-24">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">
+            <div className="bg-white rounded-xl p-6 shadow-sm sticky top-24 dark:bg-wardity-card-dark">
+              <h2 className="text-xl font-bold text-gray-900 mb-6 dark:text-wardity-text-dark">
                 Order Summary
               </h2>
 
               <div className="space-y-4 mb-6">
-                <div className="flex justify-between text-gray-600">
+                <div className="flex justify-between text-gray-600 dark:text-gray-300">
                   <span>Subtotal</span>
                   <span>{formatCurrency(cart.total)}</span>
                 </div>
-                <div className="flex justify-between text-gray-600">
+                <div className="flex justify-between text-gray-600 dark:text-gray-300">
                   <span>VAT</span>
                   <span>Included</span>
                 </div>
-                <div className="border-t border-gray-200 pt-4">
-                  <div className="flex justify-between text-xl font-bold text-gray-900">
+                <div className="border-t border-gray-200 pt-4 dark:border-gray-700">
+                  <div className="flex justify-between text-xl font-bold text-gray-900 dark:text-wardity-text-dark">
                     <span>Total</span>
                     <span className="text-primary">
                       {formatCurrency(cart.total)}
@@ -183,7 +197,7 @@ export const Cart: FC = () => {
                 </div>
               </div>
 
-              <p className="mb-6 text-xs text-gray-500">
+              <p className="mb-6 text-xs text-gray-500 dark:text-gray-400">
                 Delivery fee is calculated at checkout based on your location.
               </p>
 
@@ -197,10 +211,10 @@ export const Cart: FC = () => {
               )}
 
               <button
-                onClick={() => navigate("/checkout")}
+                onClick={handleProceedToCheckout}
                 disabled={cart.items.some(
                   (item) => item.product.status === "Out of stock",
-                )}
+                ) || isAuthLoading}
                 className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-600 transition-colors mb-4 disabled:cursor-not-allowed disabled:bg-gray-400"
               >
                 Proceed to Checkout

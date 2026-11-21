@@ -7,6 +7,7 @@ import {
   PaperAirplaneIcon,
 } from "@heroicons/react/24/outline";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { getErrorMessage } from "@/utils/errorMessage";
 
 interface ContactFormData {
   name: string;
@@ -48,7 +49,7 @@ export const Contact: FC = () => {
       // Reset success message after 5 seconds
       setTimeout(() => setSubmitSuccess(false), 5000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to send message. Please try again.");
+      setError(getErrorMessage(err, "Your message could not be sent. Check the details and try again."));
     } finally {
       setIsSubmitting(false);
     }

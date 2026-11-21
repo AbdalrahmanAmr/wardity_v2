@@ -29,10 +29,10 @@ export const OrderTracking: FC = () => {
   const query = useOrder(id);
   const ar = language === "ar";
 
-  if (query.isLoading) return <div className="min-h-screen bg-wardity-bg p-12" />;
+  if (query.isLoading) return <div className="min-h-screen bg-wardity-bg p-12 dark:bg-wardity-bg-dark" />;
   if (query.isError || !query.data) {
     return (
-      <div className="min-h-screen bg-wardity-bg p-12 text-center">
+      <div className="min-h-screen bg-wardity-bg p-12 text-center dark:bg-wardity-bg-dark">
         {ar ? "الطلب غير موجود" : "Order not found"}
       </div>
     );
@@ -58,20 +58,20 @@ export const OrderTracking: FC = () => {
     formatCurrency(amount, "EGP", ar ? "ar-EG" : "en-US", 2);
 
   return (
-    <main className="min-h-screen bg-wardity-bg py-12" dir={ar ? "rtl" : "ltr"}>
+    <main className="min-h-screen bg-wardity-bg py-12 dark:bg-wardity-bg-dark" dir={ar ? "rtl" : "ltr"}>
       <div className="container mx-auto max-w-3xl px-4">
         <Link to="/orders" className="text-primary">
           {ar ? "العودة إلى الطلبات" : "Back to orders"}
         </Link>
-        <section className="mt-5 rounded-xl bg-white p-6 shadow-sm">
+        <section className="mt-5 rounded-xl bg-white p-6 shadow-sm dark:bg-wardity-card-dark">
           <h1 className="text-2xl font-bold">
             {ar ? "تفاصيل الطلب" : "Order details"}
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             #{order.id} · {formatDate(order.createdAt)}
           </p>
           {quote && (
-            <p className="mt-4 rounded-lg bg-amber-50 p-3 text-amber-800">
+            <p className="mt-4 rounded-lg bg-amber-50 p-3 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
               {ar
                 ? "التوصيل والإجمالي النهائي بانتظار عرض سعر من الإدارة."
                 : "Delivery pricing and the final total are awaiting a manager quote."}
