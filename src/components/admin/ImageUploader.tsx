@@ -54,7 +54,7 @@ export const ImageUploader: FC<ImageUploaderProps> = ({ images, onChange }) => {
 
     await new Promise<void>((resolve, reject) => {
       const xhr = new XMLHttpRequest();
-      xhr.open("POST", `${apiOrigin()}/api/admin/uploads`);
+      xhr.open("POST", `${apiOrigin()}/api/${env.adminPath}/uploads`);
       if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) setProgress(Math.round((event.loaded / event.total) * 100));

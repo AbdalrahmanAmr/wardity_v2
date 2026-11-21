@@ -10,6 +10,9 @@ import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { trackInitiateCheckout, trackPurchase } from "@/lib/tracking";
 import { useConsent } from "@/contexts/ConsentContext";
 import { useDeliveryLocations } from "@/services/queries/deliveryLocationQueries";
+import { useAddToCart, useClearCart } from "@/services/queries/cartQueries";
+import { useOrders } from "@/services/queries/orderQueries";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 function cairoDate(): string {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -37,15 +40,21 @@ const timeOptions = Array.from({ length: 31 }, (_, index) => {
       }).format(new Date(2000, 0, 1, hour, minute)) + suffix,
   };
 });
+const INSTAPAY_PHONE_DISPLAY = "0 10 07906629";
+const INSTAPAY_WHATSAPP_NUMBER = "201007906629";
 
 export const Checkout: FC = () => {
   const { cart, clearCart } = useCart();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { language, t } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { choice } = useConsent();
   const locationsQuery = useDeliveryLocations();
+  const clearServerCart = useClearCart();
+  const addServerCart = useAddToCart();
+  const ordersQuery = useOrders(Boolean(user));
 
   const [formData, setFormData] = useState({
     firstName: user?.name.split(" ")[0] || "",
@@ -58,21 +67,66 @@ export const Checkout: FC = () => {
     deliveryDate: "",
     deliveryTime: "",
     notes: "",
+    paymentMethod: "cash_on_delivery",
   });
 
   const today = cairoDate();
   const location = locationsQuery.data?.find(
     (item) => item.id === formData.deliveryLocationId,
   );
+  const lastOrder = ordersQuery.data?.[0];
+  useEffect(() => {
+    if (!user) return;
+    const [firstName = "", ...lastNameParts] = user.name.trim().split(/\s+/);
+    setFormData((current) => ({
+      ...current,
+      firstName: current.firstName || firstName,
+      lastName: current.lastName || lastNameParts.join(" "),
+      email: current.email || user.email,
+      phone: current.phone || user.phone || "",
+    }));
+  }, [user]);
   useEffect(() => {
     if (
       formData.deliveryLocationId &&
+      locationsQuery.data &&
       !locationsQuery.data?.some(
         (item) => item.id === formData.deliveryLocationId,
       )
     )
       setFormData((current) => ({ ...current, deliveryLocationId: "" }));
   }, [formData.deliveryLocationId, locationsQuery.data]);
+  const applyLastOrderAddress = () => {
+    if (!lastOrder) return;
+    const savedLocation =
+      locationsQuery.data?.find(
+        (item) => item.id === lastOrder.deliveryLocationId,
+      ) || null;
+    const locationName = lastOrder.deliveryLocationName || savedLocation?.name;
+    const addressParts = lastOrder.shippingAddress
+      .split(",")
+      .map((part) => part.trim());
+    const postalCode = addressParts.length > 1 ? addressParts.at(-1) || "" : "";
+    const addressWithoutPostal =
+      postalCode && addressParts.length > 1
+        ? addressParts.slice(0, -1)
+        : addressParts;
+    const address =
+      locationName && addressWithoutPostal.length > 1
+        ? addressWithoutPostal
+            .slice(0, -1)
+            .join(", ")
+            .trim()
+        : lastOrder.shippingAddress;
+
+    setFormData((current) => ({
+      ...current,
+      address,
+      postalCode,
+      deliveryLocationId:
+        lastOrder.deliveryLocationId || savedLocation?.id || current.deliveryLocationId,
+    }));
+  };
   const quoteRequired = Boolean(location?.requiresQuote);
   const shippingCost = useMemo(
     () =>
@@ -88,7 +142,10 @@ export const Checkout: FC = () => {
 
   if (cart.items.length === 0) {
     return (
-      <div className="min-h-screen bg-wardity-bg py-12">
+      <div
+        className="min-h-screen bg-wardity-bg py-12"
+        dir={language === "ar" ? "rtl" : "ltr"}
+      >
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto text-center py-16">
             <h1 className="text-3xl font-bold text-gray-900 mb-4">
@@ -133,6 +190,16 @@ export const Checkout: FC = () => {
     setIsSubmitting(true);
 
     try {
+      await clearServerCart.mutateAsync();
+      await Promise.all(
+        cart.items.map((item) =>
+          addServerCart.mutateAsync({
+            productId: item.product.id,
+            quantity: item.quantity,
+            selectedSize: item.selectedSize,
+          }),
+        ),
+      );
       const eventId =
         choice === "accepted"
           ? trackInitiateCheckout(
@@ -156,7 +223,7 @@ export const Checkout: FC = () => {
       }>("/orders", {
         shippingAddress: `${formData.address}, ${location?.name || ""}, ${formData.postalCode}`,
         customerName: `${formData.firstName} ${formData.lastName}`.trim(),
-        paymentMethod: "cash_on_delivery",
+        paymentMethod: formData.paymentMethod,
         eventId,
         consent: choice === "accepted",
         email: formData.email,
@@ -188,11 +255,16 @@ export const Checkout: FC = () => {
         );
       navigate(`/orders/${encodeURIComponent(order.id)}`);
     } catch (err) {
-      setError(
+      const message =
         err instanceof Error
           ? err.message
-          : "Failed to place order. Please try again.",
-      );
+          : typeof err === "object" &&
+              err !== null &&
+              "message" in err &&
+              typeof err.message === "string"
+            ? err.message
+            : "Failed to place order. Please try again.";
+      setError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -223,9 +295,20 @@ export const Checkout: FC = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Shipping Information */}
               <div className="bg-white rounded-xl p-6 shadow-sm">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">
-                  Shipping Information
-                </h2>
+                <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Shipping Information
+                  </h2>
+                  {lastOrder && (
+                    <button
+                      type="button"
+                      onClick={applyLastOrderAddress}
+                      className="rounded-lg border border-primary px-3 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/5"
+                    >
+                      {t("useLastOrderAddress")}
+                    </button>
+                  )}
+                </div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label
@@ -461,9 +544,10 @@ export const Checkout: FC = () => {
                   <label className="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-primary transition-colors">
                     <input
                       type="radio"
-                      name="payment"
-                      value="cash"
-                      defaultChecked
+                      name="paymentMethod"
+                      value="cash_on_delivery"
+                      checked={formData.paymentMethod === "cash_on_delivery"}
+                      onChange={handleChange}
                       className="text-primary focus:ring-primary"
                     />
                     <span className="ml-3 font-medium">Cash on Delivery</span>
@@ -471,13 +555,33 @@ export const Checkout: FC = () => {
                   <label className="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-primary transition-colors">
                     <input
                       type="radio"
-                      name="payment"
-                      value="card"
+                      name="paymentMethod"
+                      value="instapay"
+                      checked={formData.paymentMethod === "instapay"}
+                      onChange={handleChange}
                       className="text-primary focus:ring-primary"
                     />
-                    <span className="ml-3 font-medium">Credit/Debit Card</span>
+                    <span className="ml-3 font-medium">InstaPay</span>
                   </label>
                 </div>
+                {formData.paymentMethod === "instapay" && (
+                  <div className="mt-4 rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm">
+                    <p className="font-semibold text-gray-900">
+                      Send the payment to InstaPay number {INSTAPAY_PHONE_DISPLAY}.
+                    </p>
+                    <p className="mt-1 text-gray-700">
+                      After payment, send the transaction screenshot on WhatsApp.
+                    </p>
+                    <a
+                      href={`https://wa.me/${INSTAPAY_WHATSAPP_NUMBER}?text=${encodeURIComponent("Hello, I am sending my InstaPay transaction screenshot for my Wardity order.")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 inline-flex rounded-lg bg-[#25D366] px-4 py-2 font-semibold text-white hover:bg-[#1ebe5d]"
+                    >
+                      Send screenshot on WhatsApp
+                    </a>
+                  </div>
+                )}
               </div>
 
               <button
@@ -493,7 +597,7 @@ export const Checkout: FC = () => {
                 ) : total === null ? (
                   "Place quote request"
                 ) : (
-                  `Place Order - ${formatCurrency(total)}`
+                  `Place Order - ${formatCurrency(total, "EGP", "en-US", 2)}`
                 )}
               </button>
             </form>
@@ -524,7 +628,7 @@ export const Checkout: FC = () => {
                         Qty: {item.quantity}
                       </p>
                       <p className="text-sm font-bold text-primary">
-                        {formatCurrency(item.product.price * item.quantity)}
+                        {formatCurrency(item.product.price * item.quantity, "EGP", "en-US", 2)}
                       </p>
                     </div>
                   </div>
@@ -533,7 +637,7 @@ export const Checkout: FC = () => {
               <div className="border-t border-gray-200 pt-4 space-y-2">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
-                  <span>{formatCurrency(cart.total)}</span>
+                  <span>{formatCurrency(cart.total, "EGP", "en-US", 2)}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Shipping</span>
@@ -544,7 +648,7 @@ export const Checkout: FC = () => {
                         ? "Select a priced location"
                         : shippingCost === 0
                           ? "Free"
-                          : formatCurrency(shippingCost)}
+                          : formatCurrency(shippingCost, "EGP", "en-US", 2)}
                   </span>
                 </div>
                 <div className="flex justify-between text-xl font-bold text-gray-900 pt-2 border-t border-gray-200">
@@ -552,7 +656,7 @@ export const Checkout: FC = () => {
                   <span className="text-primary">
                     {total === null
                       ? "Calculated after quote"
-                      : formatCurrency(total)}
+                      : formatCurrency(total, "EGP", "en-US", 2)}
                   </span>
                 </div>
               </div>

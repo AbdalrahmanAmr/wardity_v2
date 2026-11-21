@@ -1,16 +1,22 @@
-import { FC, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import { useAdminOrders, useResolveShippingQuote, useUpdateOrder, useResendOrderWhatsApp } from "@/services/queries/adminQueries";
 import { PageLoadingSpinner, ErrorBlock } from "@/components/ui";
 import { useAdminTranslations } from "@/locales/admin";
+import { useAdminOrderNotifications } from "@/contexts/useAdminOrderNotifications";
 
 export const AdminOrders: FC = () => {
   const { data: orders, isLoading, isError } = useAdminOrders();
+  const { markOrdersViewed } = useAdminOrderNotifications();
   const updateOrder = useUpdateOrder();
   const resolveQuote = useResolveShippingQuote();
   const resendWhatsApp = useResendOrderWhatsApp();
   const t = useAdminTranslations();
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [quoteFees, setQuoteFees] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    markOrdersViewed();
+  }, [markOrdersViewed]);
 
   if (isLoading) return <PageLoadingSpinner />;
   if (isError) return <ErrorBlock message={t.failedOrders} />;
@@ -32,6 +38,14 @@ export const AdminOrders: FC = () => {
     if (!Number.isFinite(deliveryFee) || deliveryFee < 0) { setUpdateError("Enter a valid delivery fee."); return; }
     try { await resolveQuote.mutateAsync({ id, deliveryFee }); } catch (err) { setUpdateError(err instanceof Error ? err.message : "Could not save shipping quote."); }
   };
+  const whatsappStatusLabel = (status: "pending" | "sent" | "failed") =>
+    status === "sent" ? t.whatsappSent : status === "failed" ? t.whatsappFailed : t.whatsappPending;
+  const whatsappStatusClass = (status: "pending" | "sent" | "failed") =>
+    status === "sent"
+      ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+      : status === "failed"
+        ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+        : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300";
 
   return (
     <div className="space-y-6">
@@ -77,8 +91,8 @@ export const AdminOrders: FC = () => {
                   </select>
                 </td>
                 <td className="p-4 text-sm">
-                  <span className={order.whatsapp_status === "sent" ? "text-green-700" : order.whatsapp_status === "failed" ? "text-red-700" : "text-amber-700"}>
-                    {order.whatsapp_status}
+                  <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${whatsappStatusClass(order.whatsapp_status)}`}>
+                    {whatsappStatusLabel(order.whatsapp_status)}
                   </span>
                   {order.whatsapp_status === "failed" && (
                     <button type="button" className="ml-2 rounded bg-primary px-2 py-1 text-white" disabled={resendWhatsApp.isPending} onClick={() => resendWhatsApp.mutate(order.id)}>

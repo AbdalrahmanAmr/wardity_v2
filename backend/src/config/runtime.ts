@@ -18,6 +18,7 @@ function getCsvEnv(name: string): string[] {
 
 export const runtimeConfig = {
   port: getIntegerEnv("PORT", 3001),
+  adminPath: (process.env.ADMIN_PATH || "vdminnnboohgam").replace(/^\/+|\/+$/g, ""),
   nodeEnv: process.env.NODE_ENV || "development",
   trustProxy: process.env.NODE_ENV === "production" ? 1 : false,
   databaseDriver: (process.env.DB_DRIVER || "").toLowerCase(),

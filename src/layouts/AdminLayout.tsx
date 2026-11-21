@@ -6,34 +6,55 @@ import { useDarkMode } from "@/hooks/useDarkMode";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAdminTranslations } from "@/locales/admin";
 import { DarkModeToggle } from "@/components/ui";
+import { Toast } from "@/components/ui/Toast";
+import {
+  AdminOrderNotificationsProvider,
+} from "@/contexts/AdminOrderNotificationsProvider";
+import { useAdminOrderNotifications } from "@/contexts/useAdminOrderNotifications";
+import { env } from "@/config";
 
 export const AdminLayout: FC = () => {
+  return (
+    <AdminOrderNotificationsProvider>
+      <AdminLayoutContent />
+    </AdminOrderNotificationsProvider>
+  );
+};
+
+const AdminLayoutContent: FC = () => {
   useDarkMode();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { toggleLanguage, isRTL } = useLanguage();
   const t = useAdminTranslations();
+  const { unreadOrderCount, toast, closeToast } = useAdminOrderNotifications();
 
-  const navItems = [
-    { name: t.dashboard, path: "/admin" },
-    { name: t.products, path: "/admin/products" },
-    { name: t.orders, path: "/admin/orders" },
-    { name: t.deliveryLocations, path: "/admin/delivery-locations" },
-    { name: t.categories, path: "/admin/categories" },
-    { name: t.occasions, path: "/admin/occasions" },
-    { name: t.carousel, path: "/admin/carousel" },
-    { name: t.users, path: "/admin/users" },
-    { name: t.settings, path: "/admin/settings" },
-  ];
+  const adminBasePath = `/${env.adminPath}`;
+  const normalizedPath = location.pathname.replace(/\/+$/, "") || adminBasePath;
+  const isExtraSection =
+    normalizedPath === `${adminBasePath}/extra` || normalizedPath.startsWith(`${adminBasePath}/extra/`);
+  const navItems = isExtraSection
+    ? [
+        { name: t.deliveryLocations, path: `${adminBasePath}/extra/delivery-locations` },
+        { name: t.categories, path: `${adminBasePath}/extra/categories` },
+        { name: t.occasions, path: `${adminBasePath}/extra/occasions` },
+        { name: t.carousel, path: `${adminBasePath}/extra/carousel` },
+        { name: t.users, path: `${adminBasePath}/extra/users` },
+        { name: t.settings, path: `${adminBasePath}/extra/settings` },
+      ]
+    : [
+        { name: t.dashboard, path: `${adminBasePath}/dashboard` },
+        { name: t.products, path: `${adminBasePath}/products` },
+        { name: t.orders, path: `${adminBasePath}/orders` },
+      ];
 
   useEffect(() => {
     setIsSidebarOpen(false);
   }, [location.pathname]);
 
-  const normalizedPath = location.pathname.replace(/\/+$/, "") || "/admin";
   const isItemActive = (path: string) =>
-    path === "/admin"
-      ? normalizedPath === "/admin"
+    path === `${adminBasePath}/dashboard`
+      ? normalizedPath === adminBasePath || normalizedPath === `${adminBasePath}/dashboard`
       : normalizedPath === path || normalizedPath.startsWith(`${path}/`);
 
   return (
@@ -58,9 +79,25 @@ export const AdminLayout: FC = () => {
                   : "border-transparent text-gray-700 hover:bg-primary/5 hover:text-primary dark:text-gray-200 dark:hover:bg-primary/10 dark:hover:text-primary-300"
               }`}
             >
-              {item.name}
+              <span className="flex-1">{item.name}</span>
+              {item.path === `${adminBasePath}/orders` && unreadOrderCount > 0 && (
+                <span
+                  aria-label={`${unreadOrderCount} ${t.newOrder}`}
+                  className="ms-2 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-xs font-bold text-white"
+                >
+                  {unreadOrderCount}
+                </span>
+              )}
             </Link>
           ))}
+          {isExtraSection && (
+            <Link
+              to={`${adminBasePath}/dashboard`}
+              className="mt-2 flex min-h-11 items-center rounded-lg border-s-4 border-transparent px-4 py-2 text-start text-gray-700 transition-colors hover:bg-primary/5 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:text-gray-200 dark:hover:bg-primary/10 dark:hover:text-primary-300"
+            >
+              &larr; {t.dashboard}
+            </Link>
+          )}
           <div className="pt-4 mt-4 border-t border-gray-200 dark:border-gray-800">
             <Link
               to="/"
@@ -97,6 +134,7 @@ export const AdminLayout: FC = () => {
           </Suspense>
         </div>
       </main>
+      {toast && <Toast {...toast} dir={isRTL ? "rtl" : "ltr"} onClose={closeToast} />}
     </div>
   );
 };

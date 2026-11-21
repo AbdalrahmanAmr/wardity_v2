@@ -64,6 +64,17 @@ export function useAdminUsers() {
   });
 }
 
+export function useDeleteAdminUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/admin/users/${encodeURIComponent(id)}`),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: adminQueryKeys.users() });
+      void queryClient.invalidateQueries({ queryKey: adminQueryKeys.orders() });
+    },
+  });
+}
+
 // Orders
 export function useAdminOrders() {
   return useQuery({
@@ -72,6 +83,7 @@ export function useAdminOrders() {
       const response = await api.get<{ data: AdminOrder[] }>("/admin/orders");
       return response.data;
     },
+    refetchInterval: 30_000,
   });
 }
 
@@ -302,7 +314,7 @@ export function useDeleteOccasion() {
 }
 
 // Stats
-// TODO: Replace fetching full lists with a dedicated /api/admin/stats endpoint
+// TODO: Replace fetching full lists with a dedicated admin stats endpoint
 // once the app scales to real production traffic.
 export function useAdminStats() {
   const usersQuery = useAdminUsers();

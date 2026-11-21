@@ -31,7 +31,7 @@ export function setTrackingEnabled(value: boolean): void {
 }
 
 export function loadTrackingScripts(): void {
-  if (!enabled || loaded || (!env.metaPixelId && !env.ga4Id) || window.location.pathname.startsWith("/admin")) return;
+  if (!enabled || loaded || (!env.metaPixelId && !env.ga4Id) || window.location.pathname.startsWith(`/${env.adminPath}`)) return;
   loaded = true;
   if (env.metaPixelId) {
     const script = document.createElement("script");
@@ -59,7 +59,7 @@ function safeEventId(): string {
 
 function send(name: string, params: Record<string, unknown>, options: EventOptions = {}): void {
   try {
-    if (!enabled || window.location.pathname.startsWith("/admin")) return;
+    if (!enabled || window.location.pathname.startsWith(`/${env.adminPath}`)) return;
     const eventId = options.eventId || safeEventId();
     if (window.fbq && env.metaPixelId) window.fbq("track", name, params, { eventID: eventId });
     if (window.gtag && env.ga4Id) window.gtag("event", name, params);

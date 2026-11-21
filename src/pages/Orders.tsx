@@ -114,7 +114,7 @@ export const LegacyOrders: FC = () => {
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-bold text-primary">
-                      {formatCurrency(order.total)}
+                      {formatCurrency(order.total, "EGP", "en-US", 2)}
                     </p>
                     <Link
                       to={`/orders/${encodeURIComponent(order.id)}`}
@@ -202,7 +202,7 @@ export const Orders: FC = () => {
                       ? ar
                         ? "بانتظار عرض سعر التوصيل"
                         : "Awaiting shipping quote"
-                      : formatCurrency(order.total)}
+                      : formatCurrency(order.total, "EGP", "en-US", 2)}
                   </b>
                 </div>
 
@@ -228,7 +228,7 @@ export const Orders: FC = () => {
                       <span className="text-gray-500">
                         {ar ? "الإجمالي الفرعي: " : "Subtotal: "}
                       </span>
-                      {formatCurrency(order.merchandiseSubtotal)}
+                      {formatCurrency(order.merchandiseSubtotal, "EGP", "en-US", 2)}
                     </p>
 
                     {quote ? (
@@ -242,7 +242,7 @@ export const Orders: FC = () => {
                         <span className="text-gray-500">
                           {ar ? "التوصيل: " : "Delivery: "}
                         </span>
-                        {formatCurrency(order.deliveryFee)}
+                        {formatCurrency(order.deliveryFee, "EGP", "en-US", 2)}
                       </p>
                     )}
                   </div>

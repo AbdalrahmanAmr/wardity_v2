@@ -3,6 +3,15 @@ import { env } from "@/config";
 import { STORAGE_KEYS } from "@/constants/storage";
 
 const BASE_URL = env.apiUrl;
+const ADMIN_API_PREFIX = "/admin";
+
+function resolveApiUrl(url: string): string {
+  return url === ADMIN_API_PREFIX
+    ? `/${env.adminPath}`
+    : url.startsWith(`${ADMIN_API_PREFIX}/`)
+      ? `/${env.adminPath}${url.slice(ADMIN_API_PREFIX.length)}`
+      : url;
+}
 
 /**
  * Get stored authentication token
@@ -41,7 +50,7 @@ async function fetchWithErrorHandling<T>(
   }
 
   try {
-    const response = await fetch(`${BASE_URL}${url}`, {
+    const response = await fetch(`${BASE_URL}${resolveApiUrl(url)}`, {
       ...options,
       headers,
     });
@@ -56,6 +65,7 @@ async function fetchWithErrorHandling<T>(
       } as ApiError;
     }
 
+    if (response.status === 204) return undefined as T;
     return response.json();
   } catch (error) {
     if (error instanceof TypeError) {

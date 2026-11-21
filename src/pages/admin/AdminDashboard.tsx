@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useAdminStats } from "@/services/queries/adminQueries";
 import { PageLoadingSpinner, ErrorBlock } from "@/components/ui";
 import { useAdminTranslations } from "@/locales/admin";
+import { env } from "@/config";
 
 export const AdminDashboard: FC = () => {
   const { data: stats, isLoading, isError } = useAdminStats();
@@ -16,9 +17,9 @@ export const AdminDashboard: FC = () => {
       <h1 className="text-3xl font-bold font-serif text-wardity-primary">{t.dashboard}</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard title={t.totalProducts} value={stats?.productsCount} link="/admin/products" />
-        <StatCard title={t.totalOrders} value={stats?.ordersCount} link="/admin/orders" />
-        <StatCard title={t.totalUsers} value={stats?.usersCount} link="/admin/users" />
+        <StatCard title={t.totalProducts} value={stats?.productsCount} link={`/${env.adminPath}/products`} />
+        <StatCard title={t.totalOrders} value={stats?.ordersCount} link={`/${env.adminPath}/orders`} />
+        <StatCard title={t.totalUsers} value={stats?.usersCount} link={`/${env.adminPath}/extra/users`} />
       </div>
     </div>
   );

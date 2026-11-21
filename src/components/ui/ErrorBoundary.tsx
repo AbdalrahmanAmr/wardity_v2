@@ -48,8 +48,10 @@ export class ErrorBoundary extends Component<
             <ErrorBlock
               title="Something went wrong"
               message={
-                this.state.error?.message ||
-                "An unexpected error occurred. Please try refreshing the page."
+                import.meta.env.PROD
+                  ? "An unexpected error occurred. Please try refreshing the page."
+                  : this.state.error?.message ||
+                    "An unexpected error occurred. Please try refreshing the page."
               }
               onRetry={() => this.setState({ hasError: false, error: undefined })}
             />

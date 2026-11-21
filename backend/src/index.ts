@@ -13,6 +13,9 @@ import { validateJwtSecret } from "./utils/jwt.js";
 import { runtimeConfig } from "./config/runtime.js";
 import { mkdirSync } from "fs";
 import { logMetaConfigurationStatus } from "./services/metaCapi.js";
+import { installGlobalErrorLogging } from "./utils/errorLogger.js";
+
+installGlobalErrorLogging();
 
 // ── Database driver selection ──────────────────────────────────────────────
 if (runtimeConfig.databaseDriver !== "mysql") {
@@ -38,6 +41,12 @@ async function bootstrap() {
   mkdirSync(UPLOADS_DIR, { recursive: true });
 
   // ── Middleware ─────────────────────────────────────────────────────────
+  app.use((_req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("Content-Security-Policy", "frame-ancestors 'none'");
+    next();
+  });
   app.use(
     cors({
       origin: (origin, callback) => {
@@ -92,7 +101,7 @@ async function bootstrap() {
   app.use("/api/cart",       cartRouterMySQL);
   app.use("/api/wishlist",   wishlistRouterMySQL);
   app.use("/api/orders",     ordersRouterMySQL);
-  app.use("/api/admin",      adminRouterMySQL);
+  app.use(`/api/${runtimeConfig.adminPath}`, adminRouterMySQL);
 
   // ── Error handling ─────────────────────────────────────────────────────
   app.use(notFoundHandler);

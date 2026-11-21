@@ -8,9 +8,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "test:order-flow": "npm run build && node dist/scripts/order-flow-test.js",
-    "seed": "tsx src/scripts/seed.ts",
-    "migrate:mysql:taxonomy": "tsx src/scripts/migrate-mysql-taxonomy.ts",
+    "provision:admin": "tsx src/scripts/provision-first-admin.ts",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
+import { logError } from "../utils/errorLogger.js";
 
 export interface ApiError extends Error {
   code?: number;
@@ -10,12 +11,36 @@ export interface ApiError extends Error {
 
 export function errorHandler(
   err: ApiError,
-  _req: Request,
+  req: Request,
   res: Response,
   _next: NextFunction
 ): void {
+  if (
+    err instanceof SyntaxError &&
+    "status" in err &&
+    (err as SyntaxError & { status?: number }).status === 400
+  ) {
+    res.status(400).json({
+      message: "Invalid JSON request body.",
+      status: 400,
+    });
+    return;
+  }
+
   if (err instanceof ZodError) {
     const errors = err.flatten().fieldErrors;
+    logError(err, {
+      request: {
+        method: req.method,
+        url: req.originalUrl,
+        ip: req.ip,
+        query: req.query,
+        params: req.params,
+        body: req.body,
+        headers: req.headers,
+      },
+      statusCode: 400,
+    });
     res.status(400).json({
       message: "Please correct the highlighted fields.",
       errors,
@@ -30,7 +55,19 @@ export function errorHandler(
     : 500;
   const message = code === 500 ? "Internal server error" : (err.message || "Request failed");
 
-  console.error("Error:", err);
+  logError(err, {
+    request: {
+      method: req.method,
+      url: req.originalUrl,
+      ip: req.ip,
+      query: req.query,
+      params: req.params,
+      body: req.body,
+      headers: req.headers,
+      userAgent: req.get("user-agent"),
+    },
+    statusCode: code,
+  });
 
   res.status(code).json({
     message,

@@ -1,10 +1,11 @@
 import { lazy, type ComponentType } from "react";
-import { createBrowserRouter, Link } from "react-router-dom";
+import { createBrowserRouter, Link, Navigate } from "react-router-dom";
 import { RootLayout } from "@/layouts/RootLayout";
 import { AdminLayout } from "@/layouts/AdminLayout";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import { NotFound } from "@/pages/NotFound";
 import { categoryLoader, occasionLoader } from "./loaders";
+import { env } from "@/config";
 
 function lazyPage<T extends ComponentType>(
   loader: () => Promise<unknown>,
@@ -222,7 +223,7 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    path: "/admin",
+    path: `/${env.adminPath}`,
     element: (
       <AdminRoute>
         <AdminLayout />
@@ -232,6 +233,10 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
+        element: <Navigate to={`/${env.adminPath}/dashboard`} replace />,
+      },
+      {
+        path: "dashboard",
         element: <AdminDashboard />,
       },
       {
@@ -242,27 +247,27 @@ export const router = createBrowserRouter([
         path: "orders",
         element: <AdminOrders />,
       },
+      { path: "delivery-locations", element: <Navigate to={`/${env.adminPath}/extra/delivery-locations`} replace /> },
+      { path: "categories", element: <Navigate to={`/${env.adminPath}/extra/categories`} replace /> },
+      { path: "occasions", element: <Navigate to={`/${env.adminPath}/extra/occasions`} replace /> },
+      { path: "users", element: <Navigate to={`/${env.adminPath}/extra/users`} replace /> },
+      { path: "carousel", element: <Navigate to={`/${env.adminPath}/extra/carousel`} replace /> },
+      { path: "settings", element: <Navigate to={`/${env.adminPath}/extra/settings`} replace /> },
       {
-        path: "categories",
-        element: <AdminCategories />,
+        path: "extra",
+        children: [
+          {
+            index: true,
+            element: <Navigate to={`/${env.adminPath}/extra/categories`} replace />,
+          },
+          { path: "categories", element: <AdminCategories /> },
+          { path: "occasions", element: <AdminOccasions /> },
+          { path: "users", element: <AdminUsers /> },
+          { path: "carousel", element: <AdminCarousel /> },
+          { path: "settings", element: <AdminSettings /> },
+          { path: "delivery-locations", element: <AdminDeliveryLocations /> },
+        ],
       },
-      {
-        path: "occasions",
-        element: <AdminOccasions />,
-      },
-      {
-        path: "users",
-        element: <AdminUsers />,
-      },
-      {
-        path: "carousel",
-        element: <AdminCarousel />,
-      },
-      {
-        path: "settings",
-        element: <AdminSettings />,
-      },
-      { path: "delivery-locations", element: <AdminDeliveryLocations /> },
     ],
   },
 ]);

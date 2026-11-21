@@ -31,14 +31,15 @@ export function formatDateTime(date: string | Date): string {
 export function formatCurrency(
   amount: number | null | undefined,
   currency = "EGP",
-  locale = "en-US"
+  locale = "en-US",
+  fractionDigits = 0,
 ): string {
   if (amount == null) return "—";
   return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
   }).format(amount);
 }
 

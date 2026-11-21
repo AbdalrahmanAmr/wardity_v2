@@ -6,6 +6,7 @@ import { PageLoadingSpinner, ScrollToTop } from "@/components/ui";
 import { useDarkMode } from "@/hooks/useDarkMode";
 import { trackPageView } from "@/lib/tracking";
 import { useConsent } from "@/contexts/ConsentContext";
+import { env } from "@/config";
 
 export const RootLayout: FC = () => {
   // Initialize dark mode on mount
@@ -14,7 +15,7 @@ export const RootLayout: FC = () => {
   const { choice } = useConsent();
   const firstPath = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (location.pathname.startsWith("/admin") || choice !== "accepted") return;
+    if (location.pathname.startsWith(`/${env.adminPath}`) || choice !== "accepted") return;
     const path = `${location.pathname}${location.search}`;
     if (firstPath.current === path) return;
     firstPath.current = path;

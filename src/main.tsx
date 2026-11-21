@@ -1,7 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { RouterProvider } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ui";
 import {
@@ -45,7 +44,6 @@ createRoot(rootElement).render(
                   <ConsentProvider>
                     <RouterProvider router={router} />
                   </ConsentProvider>
-                  <ReactQueryDevtools initialIsOpen={false} />
                 </WishlistProvider>
               </CartProvider>
             </AuthProvider>

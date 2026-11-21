@@ -41,6 +41,7 @@ backend/uploads/
 # Testing
 coverage
 *.lcov
+*.tsbuildinfo
 
 # Misc
 *.pem

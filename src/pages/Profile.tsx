@@ -4,9 +4,12 @@ import { useNavigate } from "react-router-dom";
 import { ErrorBlock } from "@/components/ui/ErrorBlock";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { UserIcon, EnvelopeIcon, PhoneIcon } from "@heroicons/react/24/outline";
+import { Link } from "react-router-dom";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Profile: FC = () => {
   const { user, updateUser, logout } = useAuth();
+  const { language, t } = useLanguage();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,7 +51,7 @@ export const Profile: FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-wardity-bg py-12">
+    <div className="min-h-screen bg-wardity-bg py-12" dir={language === "ar" ? "rtl" : "ltr"}>
       <div className="container mx-auto px-4">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-3xl font-bold text-gray-900 mb-8">My Profile</h1>
@@ -105,6 +108,12 @@ export const Profile: FC = () => {
                     Logout
                   </button>
                 </div>
+                <Link
+                  to="/orders"
+                  className="mt-4 block rounded-lg border border-primary px-4 py-3 text-center font-semibold text-primary transition-colors hover:bg-primary/5"
+                >
+                  {t("orderHistory")}
+                </Link>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6">

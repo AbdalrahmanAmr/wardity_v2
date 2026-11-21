@@ -10,7 +10,7 @@
  */
 
 import { Router, Response } from "express";
-import { authenticateToken, requireAdmin } from "../middleware/auth.js";
+import { authenticateToken, requireAdmin, type AuthRequest } from "../middleware/auth.js";
 import { generateId, generateSlug } from "../utils/id.js";
 import multer from "multer";
 import sharp from "sharp";
@@ -281,6 +281,46 @@ adminRouterMySQL.get("/users", async (_req, res: Response) => {
     "SELECT id, email, name, phone, role, created_at, updated_at FROM users ORDER BY created_at DESC",
   );
   res.json({ data: users });
+});
+
+adminRouterMySQL.delete("/users/:id", async (req: AuthRequest, res: Response) => {
+  const userId = req.params.id;
+  if (!userId) {
+    res.status(400).json({ message: "Invalid user ID." });
+    return;
+  }
+
+  const user = await dbGet<{ id: string; email: string; role: string }>(
+    "SELECT id, email, role FROM users WHERE id = ?",
+    [userId],
+  );
+  if (!user) {
+    res.status(404).json({ message: "User not found." });
+    return;
+  }
+  if (req.userId === userId) {
+    res.status(400).json({ message: "You cannot delete your own account." });
+    return;
+  }
+  if (user.role === "admin") {
+    res.status(400).json({ message: "Admin accounts cannot be deleted." });
+    return;
+  }
+
+  await dbTransaction(async (conn) => {
+    await dbRun("DELETE FROM cart_items WHERE user_id = ?", [userId], conn);
+    await dbRun("DELETE FROM wishlist_items WHERE user_id = ?", [userId], conn);
+    await dbRun(
+      "DELETE oi FROM order_items oi INNER JOIN orders o ON o.id = oi.order_id WHERE o.user_id = ?",
+      [userId],
+      conn,
+    );
+    await dbRun("DELETE FROM orders WHERE user_id = ?", [userId], conn);
+    await dbRun("DELETE FROM newsletter_subscribers WHERE email = ?", [user.email], conn);
+    await dbRun("DELETE FROM users WHERE id = ?", [userId], conn);
+  });
+
+  res.status(204).send();
 });
 
 // ── Upload ─────────────────────────────────────────────────────────────────

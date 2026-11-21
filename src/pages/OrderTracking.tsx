@@ -24,10 +24,116 @@ export const LegacyOrderTracking: FC = () => {
 };
 
 export const OrderTracking: FC = () => {
-  const { id = "" } = useParams<{ id: string }>(); const { language } = useLanguage(); const query = useOrder(id); const ar = language === "ar";
+  const { id = "" } = useParams<{ id: string }>();
+  const { language } = useLanguage();
+  const query = useOrder(id);
+  const ar = language === "ar";
+
   if (query.isLoading) return <div className="min-h-screen bg-wardity-bg p-12" />;
-  if (query.isError || !query.data) return <div className="min-h-screen bg-wardity-bg p-12 text-center">{ar ? "الطلب غير موجود" : "Order not found"}</div>;
-  const order = query.data; const quote = order.status === "awaiting_shipping_quote" || Boolean(order.requiresShippingQuote); const location = ar ? order.deliveryLocationNameAr || order.deliveryLocationName : order.deliveryLocationName;
-  const schedule = order.requestedDeliveryDate ? `${order.requestedDeliveryDate}${order.requestedDeliveryTime ? ` · ${order.requestedDeliveryTime}` : ar ? " · اليوم / في أقرب وقت" : " · Today / ASAP"}` : null;
-  return <main className="min-h-screen bg-wardity-bg py-12" dir={ar ? "rtl" : "ltr"}><div className="container mx-auto max-w-3xl px-4"><Link to="/orders" className="text-primary">{ar ? "العودة إلى الطلبات" : "Back to orders"}</Link><section className="mt-5 rounded-xl bg-white p-6 shadow-sm"><h1 className="text-2xl font-bold">{ar ? "تفاصيل الطلب" : "Order details"}</h1><p className="mt-1 text-sm text-gray-500">#{order.id} · {formatDate(order.createdAt)}</p>{quote && <p className="mt-4 rounded-lg bg-amber-50 p-3 text-amber-800">{ar ? "التوصيل والإجمالي النهائي بانتظار عرض سعر من الإدارة." : "Delivery pricing and the final total are awaiting a manager quote."}</p>}<dl className="mt-5 space-y-3 text-sm"><div className="flex justify-between gap-4"><dt>{ar ? "العنوان" : "Address"}</dt><dd>{order.shippingAddress}</dd></div>{location && <div className="flex justify-between gap-4"><dt>{ar ? "منطقة التوصيل" : "Delivery location"}</dt><dd>{location}</dd></div>}{schedule && <div className="flex justify-between gap-4"><dt>{ar ? "موعد التوصيل" : "Delivery schedule"}</dt><dd>{schedule}</dd></div>}{order.merchandiseSubtotal != null && <div className="flex justify-between gap-4"><dt>{ar ? "الإجمالي الفرعي" : "Merchandise subtotal"}</dt><dd>{formatCurrency(order.merchandiseSubtotal)}</dd></div>}{!quote && order.deliveryFee != null && <div className="flex justify-between gap-4"><dt>{ar ? "رسوم التوصيل" : "Delivery fee"}</dt><dd>{formatCurrency(order.deliveryFee)}</dd></div>}<div className="flex justify-between gap-4 font-bold"><dt>{ar ? "الإجمالي النهائي" : "Final total"}</dt><dd>{quote ? (ar ? "بانتظار عرض السعر" : "Pending quote") : formatCurrency(order.total)}</dd></div></dl><div className="mt-6 border-t pt-4">{order.items.map((item) => <div key={item.id} className="mb-3 flex items-center gap-3"><img src={item.product.image} alt="" className="h-12 w-12 rounded object-cover"/><span className="flex-1">{item.product.name} × {item.quantity}</span><b>{formatCurrency(item.price * item.quantity)}</b></div>)}</div></section></div></main>;
+  if (query.isError || !query.data) {
+    return (
+      <div className="min-h-screen bg-wardity-bg p-12 text-center">
+        {ar ? "الطلب غير موجود" : "Order not found"}
+      </div>
+    );
+  }
+
+  const order = query.data;
+  const quote =
+    order.status === "awaiting_shipping_quote" ||
+    Boolean(order.requiresShippingQuote);
+  const location = ar
+    ? order.deliveryLocationNameAr || order.deliveryLocationName
+    : order.deliveryLocationName;
+  const schedule = order.requestedDeliveryDate
+    ? `${order.requestedDeliveryDate}${
+        order.requestedDeliveryTime
+          ? ` · ${order.requestedDeliveryTime}`
+          : ar
+            ? " · اليوم / في أقرب وقت"
+            : " · Today / ASAP"
+      }`
+    : null;
+  const orderCurrency = (amount: number | null | undefined) =>
+    formatCurrency(amount, "EGP", ar ? "ar-EG" : "en-US", 2);
+
+  return (
+    <main className="min-h-screen bg-wardity-bg py-12" dir={ar ? "rtl" : "ltr"}>
+      <div className="container mx-auto max-w-3xl px-4">
+        <Link to="/orders" className="text-primary">
+          {ar ? "العودة إلى الطلبات" : "Back to orders"}
+        </Link>
+        <section className="mt-5 rounded-xl bg-white p-6 shadow-sm">
+          <h1 className="text-2xl font-bold">
+            {ar ? "تفاصيل الطلب" : "Order details"}
+          </h1>
+          <p className="mt-1 text-sm text-gray-500">
+            #{order.id} · {formatDate(order.createdAt)}
+          </p>
+          {quote && (
+            <p className="mt-4 rounded-lg bg-amber-50 p-3 text-amber-800">
+              {ar
+                ? "التوصيل والإجمالي النهائي بانتظار عرض سعر من الإدارة."
+                : "Delivery pricing and the final total are awaiting a manager quote."}
+            </p>
+          )}
+          <dl className="mt-5 space-y-3 text-sm">
+            <div className="flex justify-between gap-4">
+              <dt>{ar ? "العنوان" : "Address"}</dt>
+              <dd>{order.shippingAddress}</dd>
+            </div>
+            {location && (
+              <div className="flex justify-between gap-4">
+                <dt>{ar ? "منطقة التوصيل" : "Delivery location"}</dt>
+                <dd>{location}</dd>
+              </div>
+            )}
+            {schedule && (
+              <div className="flex justify-between gap-4">
+                <dt>{ar ? "موعد التوصيل" : "Delivery schedule"}</dt>
+                <dd>{schedule}</dd>
+              </div>
+            )}
+            {order.merchandiseSubtotal != null && (
+              <div className="flex justify-between gap-4">
+                <dt>{ar ? "الإجمالي الفرعي" : "Merchandise subtotal"}</dt>
+                <dd>{orderCurrency(order.merchandiseSubtotal)}</dd>
+              </div>
+            )}
+            {!quote && order.deliveryFee != null && (
+              <div className="flex justify-between gap-4">
+                <dt>{ar ? "رسوم التوصيل" : "Delivery fee"}</dt>
+                <dd>{orderCurrency(order.deliveryFee)}</dd>
+              </div>
+            )}
+            <div className="flex justify-between gap-4 font-bold">
+              <dt>{ar ? "الإجمالي النهائي" : "Final total"}</dt>
+              <dd>
+                {quote
+                  ? ar
+                    ? "بانتظار عرض السعر"
+                    : "Pending quote"
+                  : orderCurrency(order.total)}
+              </dd>
+            </div>
+          </dl>
+          <div className="mt-6 border-t pt-4">
+            {order.items.map((item) => (
+              <div key={item.id} className="mb-3 flex items-center gap-3">
+                <img
+                  src={item.product.image}
+                  alt=""
+                  className="h-12 w-12 rounded object-cover"
+                />
+                <span className="flex-1">
+                  {item.product.name} × {item.quantity}
+                </span>
+                <b>{orderCurrency(item.price * item.quantity)}</b>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    </main>
+  );
 };

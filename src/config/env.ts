@@ -5,6 +5,7 @@
 
 interface EnvConfig {
   apiUrl: string;
+  adminPath: string;
   isDevelopment: boolean;
   isProduction: boolean;
   metaPixelId?: string;
@@ -14,10 +15,13 @@ interface EnvConfig {
 
 function getEnvConfig(): EnvConfig {
   const apiUrl = import.meta.env.VITE_API_URL || "/api";
+  const adminPath = (import.meta.env.VITE_ADMIN_PATH || "vdminnnboohgam")
+    .replace(/^\/+|\/+$/g, "");
   const mode = import.meta.env.MODE;
 
   return {
     apiUrl,
+    adminPath,
     isDevelopment: mode === "development",
     isProduction: mode === "production",
     metaPixelId: import.meta.env.VITE_META_PIXEL_ID || undefined,
